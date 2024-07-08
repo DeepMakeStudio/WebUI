@@ -6,6 +6,7 @@
   <link rel="icon" type="image/png" href="favicon.png" />
   <link rel="stylesheet" href="reset.css">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="index.css">
   <title>mebm</title>
 </head>
 <body>
@@ -18,19 +19,31 @@
      <div></div>
      <canvas></canvas>
     </div>
-    <div id="canvas"></div>
+    <div id="canvas">
+      <div id="playback-controls">
+        <button id="playback-next" class="reset-default">
+          <iconify-icon icon="fluent:next-16-filled" width="25" flip="horizontal"></iconify-icon>
+        </button>
+        <button id="toggle-play" class="reset-default" onclick='togglePlay()'>
+          <iconify-icon icon="ph:play-fill" width="25"></iconify-icon>
+        </button>
+        <button id="playback-prev" class="reset-default">
+          <iconify-icon icon="fluent:next-16-filled" width="25"></iconify-icon>
+        </button>
+      </div>
+    </div>
     <div id="layer_holder">
      <div id="header">
       <div onclick='upload()'>+ media</div>
       <div onclick='add_text()'>+ text</div>
       <div onclick='updateSettings()'>[...]</div>
       <div id="export">export</div>
-      <a href="https://github.com/bwasti/mebm" target="_blank">src</a>
      </div>
      <div id="layers"> </div>
     </div>
     <div id="time"></div>
   </div>
   <script type="text/javascript" src="script.js"></script>
+  <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
 </body>
 </html>

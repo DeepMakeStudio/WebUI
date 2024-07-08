@@ -1,0 +1,36 @@
+#playback-controls {
+    position: absolute;
+    bottom: 20px;
+    width: 200px;
+    background: rgb(55,55,55);
+    margin: 0 auto;
+    left: 0;
+    right: 0;
+    display: flex;
+    padding: 20px;
+    border-radius: 50px;
+    color: #FFF;
+    justify-content: center;
+    gap: 10px;
+}
+
+#playback-controls button:hover {
+    color: #7741FF;
+}
+
+.reset-default {
+    border: none;
+    margin: 0;
+    padding: 0;
+    width: auto;
+    overflow: visible;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: normal;
+    outline: none;
+    cursor: pointer;
+    -webkit-font-smoothing: inherit;
+    -moz-osx-font-smoothing: inherit;
+    -webkit-appearance: none;
+}

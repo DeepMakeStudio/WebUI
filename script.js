@@ -777,6 +777,7 @@ class Player {
     this.ctx = this.canvas.getContext('2d');
     this.audio_ctx = new AudioContext();
     this.canvas_holder = document.getElementById('canvas');
+    this.playback_controls = document.getElementById('playback-controls');
     this.canvas_holder.appendChild(this.canvas);
     this.time_scale = 1.0;
     this.time_holder = document.getElementById('time');
@@ -873,6 +874,7 @@ class Player {
 
   play() {
     this.playing = true;
+    this.playback_controls.querySelector('#toggle-play iconify-icon').setAttribute('icon', 'carbon:pause-filled');
     if (this.last_paused != this.time) {
       this.refresh_audio();
     }
@@ -881,6 +883,7 @@ class Player {
 
   pause() {
     this.playing = false;
+    this.playback_controls.querySelector('#toggle-play iconify-icon').setAttribute('icon', 'ph:play-fill');
     this.audio_ctx.suspend();
     this.last_paused = this.time;
   }
@@ -1694,4 +1697,12 @@ function download(ev) {
     player.pause();
     player.time = 0;
   });
+}
+
+function togglePlay() {
+  if (player.playing) {
+    player.pause();
+  } else {
+    player.play();
+  }
 }
