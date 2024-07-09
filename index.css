@@ -2,7 +2,9 @@
     position: absolute;
     bottom: 20px;
     width: 200px;
-    background: rgb(55,55,55);
+    background: #7f4dff;
+    border: solid 1px #9267ff;
+    box-sizing: border-box;
     margin: 0 auto;
     left: 0;
     right: 0;
@@ -11,11 +13,11 @@
     border-radius: 50px;
     color: #FFF;
     justify-content: center;
-    gap: 10px;
+    gap: 20px;
 }
 
 #playback-controls button:hover {
-    color: #7741FF;
+    color: #4a25a9;
 }
 
 #layers:empty:before {
