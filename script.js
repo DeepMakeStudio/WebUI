@@ -33,8 +33,8 @@ class Settings {
     this.holder = document.createElement('div');
     this.holder.classList.toggle('holder');
     this.div.appendChild(this.holder);
-    const ok = document.createElement('a');
-    ok.textContent = '[apply]'
+    const ok = document.createElement('button');
+    ok.textContent = 'Apply Changes'
     this.div.appendChild(ok);
   }
 
@@ -173,8 +173,9 @@ class RenderedLayer {
     }).bind(this));
     this.title_div.appendChild(this.description);
 
-    let delete_option = document.createElement('a');
-    delete_option.textContent = '[x]';
+    let delete_option = document.createElement('button');
+    delete_option.setAttribute('class', 'reset-default delete-layer-btn');
+    delete_option.innerHTML = `<iconify-icon icon="ic:round-close" width="25" flip="horizontal"></iconify-icon>`;
     delete_option.style.float = "right";
     delete_option.addEventListener('click', (function() {
       if (confirm("delete layer \"" + this.name + "\"?")) {
@@ -1468,11 +1469,12 @@ function popup(text) {
   div.addEventListener('keydown', function(ev) {
     ev.stopPropagation();
   });
-  const close = document.createElement('a');
+  const close = document.createElement('button');
   close.addEventListener('click', function() {
     div.remove();
   });
-  close.textContent = "[x]";
+  close.setAttribute('class', 'reset-default delete-layer-btn');
+  close.innerHTML = `<iconify-icon icon="ic:round-close" width="25" flip="horizontal"></iconify-icon>`;
   close.classList.toggle('close');
   div.appendChild(close);
   div.appendChild(text);
@@ -1540,7 +1542,7 @@ function add_text() {
 }
 
 function exportVideo(blob) {
-  alert("Warning: exported video may need to be fixed with cloudconvert.com or similar tools");
+  console.warn("Warning: exported video may need to be fixed with cloudconvert.com or similar tools");
   const vid = document.createElement('video');
   vid.controls = true;
   vid.src = URL.createObjectURL(blob);
@@ -1557,7 +1559,11 @@ function exportVideo(blob) {
       a.textContent = 'download';
     }
     a.href = vid.src;
-    document.getElementById('header').appendChild(a);
+    //document.getElementById('header').appendChild(a);
+    const e = document.getElementById('export');
+    e.innerHTML = `<iconify-icon icon="fluent:arrow-download-16-filled" width="25"></iconify-icon>`;
+  
+    return a;
   }
   vid.ontimeupdate = function() {
     this.ontimeupdate = () => {
@@ -1566,8 +1572,9 @@ function exportVideo(blob) {
     make_a();
     vid.currentTime = 0;
   }
-  make_a();
+  make_a().click();
   vid.currentTime = Number.MAX_SAFE_INTEGER;
+
 }
 
 function uploadSupportedType(files) {
@@ -1660,7 +1667,7 @@ function download(ev) {
   }
   const e = document.getElementById('export');
   const e_text = e.textContent;
-  e.textContent = "exporting...";
+  e.innerHTML = `<iconify-icon icon="svg-spinners:12-dots-scale-rotate" width="25" flip="horizontal"></iconify-icon>`;
   const chunks = [];
   const stream = player.canvas.captureStream();
 

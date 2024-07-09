@@ -18,6 +18,16 @@
     color: #7741FF;
 }
 
+#layers:empty:before {
+    content: "No media uploaded...";
+    position: absolute;
+    margin: auto;
+    left: 0;
+    right: 0;
+    text-align: center;
+    margin-top: 40px;
+}
+
 .reset-default {
     border: none;
     margin: 0;

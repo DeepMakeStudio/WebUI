@@ -12,7 +12,7 @@
 <body>
   <div id="background" class="full">
     refresh if visible (javascript didn't load)
-    <input type="file" id="filepicker" multiple accept="video/mp4,video/x-m4v,video/*,image/*"/>
+    <input type="file" id="filepicker" accept="video/mp4,video/x-m4v,image/*"/>
   </div>
   <div id="foreground" class="full">
     <div id="cursor_preview">
@@ -34,12 +34,32 @@
     </div>
     <div id="layer_holder">
      <div id="header">
-      <div onclick='upload()'>+ media</div>
-      <div onclick='add_text()'>+ text</div>
-      <div onclick='updateSettings()'>[...]</div>
-      <div id="export">export</div>
+      <div>
+        <div onclick=''>
+          <iconify-icon icon="fluent:paint-brush-sparkle-20-filled" width="25" flip="horizontal"></iconify-icon>
+        </div>
+        <!--<div onclick='add_text()'>+ text</div>-->
+        <div onclick=''>
+          <iconify-icon icon="fluent:rectangle-landscape-sparkle-20-regular" width="25" flip="horizontal"></iconify-icon>
+        </div>
+        <div onclick=''>
+          <iconify-icon icon="fluent:line-32-filled" width="25"></iconify-icon>
+        </div>
+      </div>
+      <div>
+        <div onclick='upload()'>
+          <iconify-icon icon="fluent:video-add-20-regular" width="25" flip="horizontal"></iconify-icon>
+        </div>
+        <!--<div onclick='add_text()'>+ text</div>-->
+        <div onclick='updateSettings()'>
+          <iconify-icon icon="fluent:settings-28-regular" width="25" flip="horizontal"></iconify-icon>
+        </div>
+        <div id="export">
+          <iconify-icon icon="fluent:arrow-download-16-filled" width="25"></iconify-icon>
+        </div>
+      </div>
      </div>
-     <div id="layers"> </div>
+     <div id="layers"></div>
     </div>
     <div id="time"></div>
   </div>
