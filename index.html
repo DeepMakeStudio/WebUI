@@ -33,7 +33,7 @@
       </div>
     </div>
     <div id="layer_holder">
-     <div id="header">
+     <section id="header">
       <div>
         <div onclick=''>
           <iconify-icon icon="fluent:paint-brush-sparkle-20-filled" width="25" flip="horizontal"></iconify-icon>
@@ -58,8 +58,39 @@
           <iconify-icon icon="fluent:arrow-download-16-filled" width="25"></iconify-icon>
         </div>
       </div>
-     </div>
-     <div id="layers"></div>
+     </section>
+     <section id="layers"></section>
+     <section id="plugins">
+        <h2 class="holder_heading">Plugins</h2>
+        <div>
+          <div class="select_plugin">
+            <div>
+              <label>Select Plugin</label>
+              <select>
+                <option>Bisenet</option>
+                <option>Segment Face</option>
+              </select>
+            </div>
+            <div>
+              <label>Select Endpoint</label>
+              <select>
+                <option>Bisenet</option>
+                <option>Segment Face</option>
+              </select>
+            </div>
+          </div>
+          <div class="endpoint_parameters">
+            <label>Select Facial Features</label>
+            <div>
+              <label><input type="checkbox"/>Eyes</label>
+              <label><input type="checkbox"/>Eyes</label>
+              <label><input type="checkbox"/>Eyes</label>
+              <label><input type="checkbox"/>Eyes</label>
+              <label><input type="checkbox"/>Eyes</label>
+            </div>
+          </div>
+        </div>
+     </section>
     </div>
     <div id="time"></div>
   </div>

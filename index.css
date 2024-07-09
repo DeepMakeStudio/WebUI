@@ -20,6 +20,11 @@
     color: #4a25a9;
 }
 
+#layers {
+    min-height: 100px;
+    overflow-y: auto;
+}
+
 #layers:empty:before {
     content: "No media uploaded...";
     position: absolute;
@@ -28,6 +33,17 @@
     right: 0;
     text-align: center;
     margin-top: 40px;
+}
+
+#plugins {
+    flex-grow: 1;
+    min-height: 400px;
+}
+
+.holder_heading {
+    background-color: #201a33;
+    padding: 15px;
+    font-weight: 400;
 }
 
 .reset-default {
@@ -45,4 +61,33 @@
     -webkit-font-smoothing: inherit;
     -moz-osx-font-smoothing: inherit;
     -webkit-appearance: none;
+}
+
+#plugins .select_plugin {
+    display: flex;
+    padding: 20px 15px;
+    gap: 10px;
+}
+
+#plugins .endpoint_parameters {
+    padding: 0 15px;
+}
+
+#plugins .select_plugin label,
+#plugins .endpoint_parameters > label {
+    display: block;
+    margin-bottom: 7px;
+}
+
+#plugins .select_plugin > div {
+    flex-grow: 1;
+}
+
+#plugins .select_plugin select {
+    width: 100%;
+    display: block;
+    padding: 8px;
+    outline: none;
+    border: none;
+    border-radius: 5px;
 }
