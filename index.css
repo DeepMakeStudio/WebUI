@@ -4,6 +4,10 @@
     position: absolute;
 }
 
+#drawing-tools .active {
+    color: #ef0057;
+}
+
 #playback-controls {
     position: absolute;
     bottom: 20px;

@@ -1412,12 +1412,15 @@ let player = new Player();
 class DrawingCanvas {
   constructor() {
     this.canvas = document.querySelector('#drawing-canvas');
+    this.drawingTools = document.querySelector('#drawing-tools');
     this.ctx = this.canvas.getContext('2d');
     this.activeTool = null;
   }
 
   switchTool(tool) {
     this.activeTool = tool;
+    this.drawingTools.querySelector('.active')?.classList.remove('active');
+    this.drawingTools.querySelector(`[data-tool="${tool}"]`).classList.add('active');
   }
 }
 
