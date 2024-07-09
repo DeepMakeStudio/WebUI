@@ -1,0 +1,26 @@
+{
+    "model_name": {
+       "current": "runwayml/stable-diffusion-v1-5",
+       "default": "runwayml/stable-diffusion-v1-5",
+       "options": [
+          "CompVis/stable-diffusion-v1-1",
+          "CompVis/stable-diffusion-v1-2",
+          "CompVis/stable-diffusion-v1-3",
+          "CompVis/stable-diffusion-v1-4",
+          "runwayml/stable-diffusion-v1-5",
+          "stabilityai/stable-diffusion-2",
+          "stabilityai/stable-diffusion-2-1",
+          "stabilityai/stable-diffusion-xl-base-1.0"
+       ],
+       "allow_custom": true,
+       "custom_type": "Text"
+    },
+    "model_dtype":{
+       "current": "fp32",
+       "default": "fp32",
+       "options":[
+          "fp32",
+          "fp16"
+       ]
+    }
+}

@@ -1,0 +1,81 @@
+{
+  "request": "sync",
+  "layer_name": "test layer",
+  "data": [
+    {
+      "plugin": "Diffusers",
+      "endpoint": "generate_image",
+      "plugin_id": "151565",
+      "data": {
+        "prompt": "happy puppies",
+        "seed": 4,
+        "iterations": 17,
+        "height": 512,
+        "width": 512
+      },
+      "outputs": {
+        "output_img": "Image"
+      }
+    },
+    {
+      "plugin": "Diffusers",
+      "endpoint": "generate_image",
+      "plugin_id": "246853",
+      "data": {
+        "prompt": "calm seas",
+        "seed": 7,
+        "iterations": 15,
+        "height": 512,
+        "width": 512
+      },
+      "outputs": {
+        "output_img": "Image"
+      }
+    },
+    {
+      "plugin": "Diffusers",
+      "endpoint": "generate_image",
+      "plugin_id": "537921",
+      "data": {
+        "prompt": "beautiful sunset",
+        "seed": 12,
+        "iterations": 20,
+        "height": 512,
+        "width": 512
+      },
+      "outputs": {
+        "output_img": "Image"
+      }
+    },
+    {
+      "plugin": "Diffusers",
+      "endpoint": "generate_image",
+      "plugin_id": "683450",
+      "data": {
+        "prompt": "lush forest",
+        "seed": 3,
+        "iterations": 18,
+        "height": 512,
+        "width": 512
+      },
+      "outputs": {
+        "output_img": "Image"
+      }
+    },
+    {
+      "plugin": "Diffusers",
+      "endpoint": "generate_image",
+      "plugin_id": "859724",
+      "data": {
+        "prompt": "cozy fireplace",
+        "seed": 10,
+        "iterations": 19,
+        "height": 512,
+        "width": 512
+      },
+      "outputs": {
+        "output_img": "Image"
+      }
+    }
+  ]
+}

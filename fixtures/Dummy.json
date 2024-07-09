@@ -1,0 +1,54 @@
+{
+    "plugin": {
+      "Name": "Dummy",
+      "Version": "0.1.1",
+      "Author": "DeepMake",
+      "Description": "Dummy plugin for testing purposes",
+      "env": "deepmake"
+    },
+    "config": {
+      "data_folder": "data/images",
+      "mask_folder": "data/masks"
+    },
+    "endpoints": {
+      "get_image": {
+        "call": "execute",
+        "inputs": {
+          "prompt": "Text",
+          "seed": "Int(default=None, optional=true)",
+          "iterations": "Int(default=20, min=1, optional=true)",
+          "height": "Int(default=512, min=16, optional=true)",
+          "width": "Int(default=512, min=16, optional=true)"
+        },
+        "outputs": {
+          "output_img": "Image"
+        }
+      },
+      "get_mask": {
+        "call": "execute2",
+        "inputs": {
+          "prompt": "Text",
+          "seed": "Int(default=None, optional=true)",
+          "iterations": "Int(default=20, min=1, optional=true)",
+          "height": "Int(default=512, min=16, optional=true)",
+          "width": "Int(default=512, min=16, optional=true)"
+        },
+        "outputs": {
+          "output_mask": "Image"
+        }
+      },
+      "get_images": {
+        "call": "execute_multi",
+        "inputs": {
+          "prompt": "Text",
+          "seed": "Int(default=None, optional=true)",
+          "iterations": "Int(default=20, min=1, optional=true)",
+          "height": "Int(default=512, min=16, optional=true)",
+          "width": "Int(default=512, min=16, optional=true)"
+        },
+        "outputs": {
+          "output_imgs": "[Image,Image,Image]"
+        }
+      }
+    }
+  }

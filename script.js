@@ -1407,8 +1407,25 @@ class Player {
 
 }
 
-
 let player = new Player();
+
+class DrawingCanvas {
+  constructor() {
+    this.canvas = document.querySelector('#drawing-canvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.activeTool = null;
+  }
+
+  switchTool(tool) {
+    this.activeTool = tool;
+  }
+}
+
+let drawingCanvas = new DrawingCanvas();
+
+function switchTool(tool) {
+  drawingCanvas.switchTool(tool);
+}
 
 window.addEventListener('drop', function(ev) {
   ev.preventDefault();
