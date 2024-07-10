@@ -757,6 +757,83 @@ class AudioLayer extends RenderedLayer {
   }
 };
 
+class DrawingCanvas {
+  constructor() {
+    this.drawingCanvas = document.createElement('canvas');
+    this.drawingTools = document.querySelectorAll('#drawing-tools [data-tool]');
+    this.canvasHolder = document.querySelector('#drawing-canvas');
+    this.ctx = this.drawingCanvas.getContext('2d');
+    this.activeTool = null;
+    this.isDrawing = false;
+    this.startX = 0;
+    this.startY = 0;
+
+    this.canvasHolder.append(this.drawingCanvas);
+
+    for( let i = 0; i < this.drawingTools.length; i++ ) {
+      this.drawingTools[i].addEventListener('click', () => this.switchTool(this.drawingTools[i].getAttribute('data-tool')));
+    }
+
+    this.initEvents();
+  }
+
+  initEvents() {
+    this.drawingCanvas.addEventListener('mousedown', (event) => this.startDrawing(event));
+    this.drawingCanvas.addEventListener('mousemove', (event) => this.draw(event));
+    this.drawingCanvas.addEventListener('mouseup', (event) => this.stopDrawing(event));
+  }
+
+  switchTool(tool) {
+    const active = [...this.drawingTools].find(btn => btn.classList.contains('active'));
+    if( this.activeTool === tool ) {
+      this.activeTool = null;
+      active.classList.remove('active');
+      return;
+    }
+    this.activeTool = tool;
+    player.pause();
+    if(active) active.classList.remove('active');
+    if(tool) [...this.drawingTools].find(btn => btn.getAttribute('data-tool') === tool).classList.add('active');
+  }
+
+  startDrawing(event) {
+    this.isDrawing = true;
+    this.startX = event.offsetX;
+    this.startY = event.offsetY;
+
+    if (this.activeTool === 'brush') {
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.startX, this.startY);
+    }
+  }
+
+  draw(event) {
+    if(!this.isDrawing) return;
+    const [x, y] = [event.offsetX, event.offsetY];
+
+    switch (this.activeTool) {
+      case 'brush':
+        this.ctx.lineTo(x, y);
+        this.ctx.lineWidth = 14;
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        this.ctx.globalCompositeOperation = 'destination-atop';
+        this.ctx.stroke();
+        break;
+      case 'rectangle':
+        //...
+        break;
+    }
+  }
+
+  stopDrawing() {
+    this.isDrawing = false;
+    if(this.isDrawing && this.activeTool !== 'brush') {
+      this.ctx.closePath();
+    }
+  }
+}
+
 class Player {
 
   constructor() {
@@ -793,6 +870,8 @@ class Player {
     this.cursor_ctx = this.cursor_canvas.getContext('2d');
     this.cursor_text = this.cursor_preview.querySelector('div');
     window.requestAnimationFrame(this.loop.bind(this));
+
+    this.drawingCanvas = new DrawingCanvas();
 
     this.setupPinchHadler(this.canvas_holder,
       (function(scale, rotation) {
@@ -1306,9 +1385,15 @@ class Player {
 
   resize() {
     // update canvas and time sizes
-    this.canvas.width = this.canvas.clientWidth * dpr;
-    this.canvas.height = this.canvas.clientHeight * dpr;
+    const width = this.canvas.clientWidth * dpr;
+    const height = this.canvas.clientHeight * dpr
+    this.canvas.width = width;
+    this.canvas.height = height;
+    this.drawingCanvas.drawingCanvas.width = width;
+    this.drawingCanvas.drawingCanvas.height = height;
+
     this.ctx.scale(dpr, dpr);
+    this.drawingCanvas.ctx.scale(dpr, dpr);
     this.resize_time();
     for (let layer of this.layers) {
       layer.resize();
@@ -1408,27 +1493,6 @@ class Player {
 }
 
 let player = new Player();
-
-class DrawingCanvas {
-  constructor() {
-    this.canvas = document.querySelector('#drawing-canvas');
-    this.drawingTools = document.querySelector('#drawing-tools');
-    this.ctx = this.canvas.getContext('2d');
-    this.activeTool = null;
-  }
-
-  switchTool(tool) {
-    this.activeTool = tool;
-    this.drawingTools.querySelector('.active')?.classList.remove('active');
-    this.drawingTools.querySelector(`[data-tool="${tool}"]`).classList.add('active');
-  }
-}
-
-let drawingCanvas = new DrawingCanvas();
-
-function switchTool(tool) {
-  drawingCanvas.switchTool(tool);
-}
 
 window.addEventListener('drop', function(ev) {
   ev.preventDefault();

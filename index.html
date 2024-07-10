@@ -19,6 +19,7 @@
      <div></div>
      <canvas></canvas>
     </div>
+    <div id="drawing-canvas"></div>
     <div id="canvas">
       <div id="playback-controls">
         <button id="playback-next" class="reset-default">
@@ -31,20 +32,22 @@
           <iconify-icon icon="fluent:next-16-filled" width="25"></iconify-icon>
         </button>
       </div>
-      <canvas id="drawing-canvas"></canvas>
     </div>
     <div id="layer_holder">
      <section id="header">
       <div id="drawing-tools">
-        <div data-tool="brush" onclick="switchTool('brush')">
+        <div data-tool="brush">
           <iconify-icon icon="fluent:paint-brush-sparkle-20-filled" width="25" flip="horizontal"></iconify-icon>
         </div>
         <!--<div onclick='add_text()'>+ text</div>-->
-        <div data-tool="rectangle" onclick="switchTool('rectangle')">
+        <div data-tool="rectangle">
           <iconify-icon icon="fluent:rectangle-landscape-sparkle-20-regular" width="25" flip="horizontal"></iconify-icon>
         </div>
-        <div data-tool="line" onclick="switchTool('line')">
+        <div data-tool="line">
           <iconify-icon icon="fluent:line-32-filled" width="25"></iconify-icon>
+        </div>
+        <div data-tool="point">
+          <iconify-icon icon="fluent:point-scan-24-filled" width="25"></iconify-icon>
         </div>
       </div>
       <div>
