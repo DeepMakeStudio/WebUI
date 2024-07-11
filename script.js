@@ -598,6 +598,7 @@ class VideoLayer extends RenderedLayer {
       this.video.addEventListener('loadedmetadata', (function() {
         let width = this.video.videoWidth;
         let height = this.video.videoHeight;
+        player.updateDrawArea(width, height);
         let dur = this.video.duration;
         this.total_time = dur * 1000;
         let size = fps * dur * width * height;
@@ -652,6 +653,7 @@ class VideoLayer extends RenderedLayer {
     let name = this.name;
     for (let i = 0; i < d * fps; ++i) {
       let frame = await this.seek(i / fps);
+      player.drawingCanvas.frameMasksTracker.push({frameNumber: i, mask: null});
       let sum = 0;
       for (let j = 0; j < frame.data.length; ++j) {
         sum += frame.data[j];
@@ -671,6 +673,7 @@ class VideoLayer extends RenderedLayer {
     }
     let time = ref_time - this.start_time;
     let index = Math.floor(time / 1000 * fps);
+    player.drawingCanvas.drawCurrentFrameMask(index)
     if (index < this.frames.length) {
       const frame = this.frames[index];
       this.ctx.putImageData(frame, 0, 0);
@@ -763,6 +766,8 @@ class DrawingCanvas {
     this.drawingTools = document.querySelectorAll('#drawing-tools [data-tool]');
     this.canvasHolder = document.querySelector('#drawing-canvas');
     this.ctx = this.drawingCanvas.getContext('2d');
+    this.frameMasksTracker = [];
+    this.currentFrameNumber = -1;
     this.activeTool = null;
     this.isDrawing = false;
     this.drawingCanvas.width = canvasWidth;
@@ -775,7 +780,6 @@ class DrawingCanvas {
       x: (canvasWidth - 500) / 2,
       y: (canvasHeight - 500) / 2,
     }
-    console.log(canvasWidth, canvasHeight, (this.drawingCanvas.width - 500) / 2)
 
     this.canvasHolder.append(this.drawingCanvas);
 
@@ -786,6 +790,18 @@ class DrawingCanvas {
     this.initEvents();
   }
 
+  drawCurrentFrameMask(frameNumber) {
+    if( this.currentFrameNumber !== frameNumber ) {
+      if( this.frameMasksTracker[frameNumber].mask ) {
+        const snapshot = this.frameMasksTracker[frameNumber].mask;
+        this.ctx.putImageData(snapshot, 0, 0);
+      } else {
+        this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+      }
+      this.currentFrameNumber = frameNumber;
+    }
+  }
+
   initEvents() {
     this.drawingCanvas.addEventListener('mousedown', (event) => this.startDrawing(event));
     this.drawingCanvas.addEventListener('mousemove', (event) => this.draw(event));
@@ -793,6 +809,7 @@ class DrawingCanvas {
   }
 
   switchTool(tool) {
+    console.log(this.frameMasksTracker, this.currentFrameNumber);
     const active = [...this.drawingTools].find(btn => btn.classList.contains('active'));
     if( this.activeTool === tool ) {
       this.activeTool = null;
@@ -806,7 +823,7 @@ class DrawingCanvas {
   }
 
   startDrawing(event) {
-    if( !this.isWithinDrawArea(event.offsetX, event.offsetY) || !player.layers.length ) return;
+    //if( /*!this.isWithinDrawArea(event.offsetX, event.offsetY) ||*/ !player.layers.length ) return;
     this.isDrawing = true;
     this.startX = event.offsetX;
     this.startY = event.offsetY;
@@ -814,33 +831,48 @@ class DrawingCanvas {
     if (this.activeTool === 'brush') {
       this.ctx.beginPath();
       this.ctx.moveTo(this.startX, this.startY);
+    } else if(this.activeTool === 'rectangle') {
+      // resizable rectangle
     }
   }
 
   draw(event) {
     const [x, y] = [event.offsetX, event.offsetY];
-    if(!this.isDrawing || !this.isWithinDrawArea(x, y)) return;
+    if(!this.isDrawing /*|| !this.isWithinDrawArea(x, y)*/) return;
+    this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
 
     switch (this.activeTool) {
       case 'brush':
         this.ctx.lineTo(x, y);
         this.ctx.lineWidth = 14;
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
         this.ctx.globalCompositeOperation = 'xor';
         this.ctx.stroke();
         break;
       case 'rectangle':
-        //...
+        this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+        this.ctx.lineWidth = 2;
+        this.ctx.globalCompositeOperation = 'xor';
+        this.ctx.strokeRect(this.startX, this.startY, x - this.startX, y - this.startY);
         break;
+      case 'line':
+        
     }
   }
 
   stopDrawing() {
     if(this.isDrawing && this.activeTool !== null) {
       this.ctx.closePath();
+      const canvasSnapshot = this.ctx.getImageData(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+      const frame = this.frameMasksTracker[this.getCurrentFrameFromTracker()];
+      frame.mask = canvasSnapshot;
+      Object.defineProperty(frame, 'mask', canvasSnapshot);
       //this.addMaskLayer();
     }
     this.isDrawing = false;
+  }
+
+  getCurrentFrameFromTracker() {
+    return this.frameMasksTracker.findIndex(frame => frame.frameNumber === this.currentFrameNumber);
   }
 
   addMaskLayer() {
@@ -925,6 +957,11 @@ class Player {
       }).bind(this));
     this.setupDragHandler();
     this.resize();
+  }
+
+  updateDrawArea(videoWidth, videoHeight) {
+    this.drawingCanvas.drawArea.width = videoWidth;
+    this.drawingCanvas.drawArea.height = videoHeight;
   }
 
   dumpToJson() {
