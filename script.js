@@ -765,6 +765,7 @@ class DrawingCanvas {
     this.drawingCanvas = document.createElement('canvas');
     this.drawingTools = document.querySelectorAll('#drawing-tools [data-tool]');
     this.canvasHolder = document.querySelector('#drawing-canvas');
+    this.maskLayers = document.querySelector('#mask-layers');
     this.ctx = this.drawingCanvas.getContext('2d');
     this.frameMasksTracker = [];
     this.currentFrameNumber = -1;
@@ -809,7 +810,6 @@ class DrawingCanvas {
   }
 
   switchTool(tool) {
-    console.log(this.frameMasksTracker, this.currentFrameNumber);
     const active = [...this.drawingTools].find(btn => btn.classList.contains('active'));
     if( this.activeTool === tool ) {
       this.activeTool = null;
@@ -866,6 +866,7 @@ class DrawingCanvas {
       const frame = this.frameMasksTracker[this.getCurrentFrameFromTracker()];
       frame.mask = canvasSnapshot;
       Object.defineProperty(frame, 'mask', canvasSnapshot);
+      this.updateMaskLayer(frame);
       //this.addMaskLayer();
     }
     this.isDrawing = false;
@@ -875,11 +876,42 @@ class DrawingCanvas {
     return this.frameMasksTracker.findIndex(frame => frame.frameNumber === this.currentFrameNumber);
   }
 
-  addMaskLayer() {
-    const image = this.drawingCanvas.toDataURL();
+  updateMaskLayer(frame) {
+    if( this.maskLayers.querySelector(`[data-frame-number="${frame.frameNumber}"]`) ) {
+      return;
+    }
+    const layerContainer = document.createElement('div');
+    const thumbCanvas = document.createElement('canvas');
+    const close = document.createElement('button');
+    layerContainer.classList.add('mask-layer-container');
+    close.classList.add('reset-default');
+    thumbCanvas.width = 130;
+    thumbCanvas.height = 68.4;
+    const ctx = thumbCanvas.getContext("2d");
+    const name = document.createElement('span');
+    close.addEventListener('click', () => this.deleteMaskLayer(frame.frameNumber));
+    layerContainer.setAttribute('data-frame-number', frame.frameNumber);
+    ctx.putImageData(frame.mask, 0, 0);
+    name.append(`${frame.frameNumber} - Bisenet_0_0_250_300`);
+    layerContainer.append(thumbCanvas);
+    layerContainer.append(name);
+    close.innerHTML = `<iconify-icon icon="ic:round-close" width="25" flip="horizontal"></iconify-icon>`;
+    layerContainer.append(close);
+    this.maskLayers.append(layerContainer);
+    /*const image = this.drawingCanvas.toDataURL();
     const imageFile = this.dataURLtoFile(image, 'mask');
     const imageLayer = new ImageLayer(imageFile);
-    player.add(imageLayer);
+    player.add(imageLayer);*/
+  }
+
+  deleteMaskLayer(frameNumber) {
+    try {
+      this.frameMasksTracker[frameNumber].mask = null;
+      this.maskLayers.querySelector(`[data-frame-number="${frameNumber}"]`).remove();
+    } catch(error) {
+      console.error('failed to delete mask layer', error);
+      alert('failed to delete mask layer')
+    }
   }
 
   isWithinDrawArea(x, y) {
