@@ -758,15 +758,24 @@ class AudioLayer extends RenderedLayer {
 };
 
 class DrawingCanvas {
-  constructor() {
+  constructor(canvasWidth, canvasHeight) {
     this.drawingCanvas = document.createElement('canvas');
     this.drawingTools = document.querySelectorAll('#drawing-tools [data-tool]');
     this.canvasHolder = document.querySelector('#drawing-canvas');
     this.ctx = this.drawingCanvas.getContext('2d');
     this.activeTool = null;
     this.isDrawing = false;
+    this.drawingCanvas.width = canvasWidth;
+    this.drawingCanvas.height = canvasHeight;
     this.startX = 0;
     this.startY = 0;
+    this.drawArea = {
+      width: 500,
+      height: 500,
+      x: (canvasWidth - 500) / 2,
+      y: (canvasHeight - 500) / 2,
+    }
+    console.log(canvasWidth, canvasHeight, (this.drawingCanvas.width - 500) / 2)
 
     this.canvasHolder.append(this.drawingCanvas);
 
@@ -797,6 +806,7 @@ class DrawingCanvas {
   }
 
   startDrawing(event) {
+    if( !this.isWithinDrawArea(event.offsetX, event.offsetY) || !player.layers.length ) return;
     this.isDrawing = true;
     this.startX = event.offsetX;
     this.startY = event.offsetY;
@@ -808,16 +818,15 @@ class DrawingCanvas {
   }
 
   draw(event) {
-    if(!this.isDrawing) return;
     const [x, y] = [event.offsetX, event.offsetY];
+    if(!this.isDrawing || !this.isWithinDrawArea(x, y)) return;
 
     switch (this.activeTool) {
       case 'brush':
         this.ctx.lineTo(x, y);
         this.ctx.lineWidth = 14;
         this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        this.ctx.globalCompositeOperation = 'destination-atop';
+        this.ctx.globalCompositeOperation = 'xor';
         this.ctx.stroke();
         break;
       case 'rectangle':
@@ -827,10 +836,36 @@ class DrawingCanvas {
   }
 
   stopDrawing() {
-    this.isDrawing = false;
-    if(this.isDrawing && this.activeTool !== 'brush') {
+    if(this.isDrawing && this.activeTool !== null) {
       this.ctx.closePath();
+      //this.addMaskLayer();
     }
+    this.isDrawing = false;
+  }
+
+  addMaskLayer() {
+    const image = this.drawingCanvas.toDataURL();
+    const imageFile = this.dataURLtoFile(image, 'mask');
+    const imageLayer = new ImageLayer(imageFile);
+    player.add(imageLayer);
+  }
+
+  isWithinDrawArea(x, y) {
+    return (
+      x >= this.drawArea.x &&
+      x <= this.drawArea.x + this.drawArea.width &&
+      y >= this.drawArea.y &&
+      y <= this.drawArea.y + this.drawArea.height
+    );
+  }
+
+  dataURLtoFile(dataurl, filename) {
+    var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+        while(n--){
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new File([u8arr], filename, {type:mime});
   }
 }
 
@@ -871,7 +906,7 @@ class Player {
     this.cursor_text = this.cursor_preview.querySelector('div');
     window.requestAnimationFrame(this.loop.bind(this));
 
-    this.drawingCanvas = new DrawingCanvas();
+    this.drawingCanvas = new DrawingCanvas(this.width, this.height);
 
     this.setupPinchHadler(this.canvas_holder,
       (function(scale, rotation) {
