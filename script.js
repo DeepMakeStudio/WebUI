@@ -771,6 +771,7 @@ class DrawingCanvas {
     this.currentFrameNumber = -1;
     this.activeTool = null;
     this.isDrawing = false;
+    this.isErasing = false;
     this.drawingCanvas.width = canvasWidth;
     this.drawingCanvas.height = canvasHeight;
     this.startX = 0;
@@ -825,10 +826,16 @@ class DrawingCanvas {
   startDrawing(event) {
     //if( /*!this.isWithinDrawArea(event.offsetX, event.offsetY) ||*/ !player.layers.length ) return;
     this.isDrawing = true;
+    this.isErasing = event.shiftKey;
     this.startX = event.offsetX;
     this.startY = event.offsetY;
 
     if (this.activeTool === 'brush') {
+      let operation = 'xor';
+      if( this.isErasing ) {
+        operation = 'destination-out';
+      }
+      this.ctx.globalCompositeOperation = operation
       this.ctx.beginPath();
       this.ctx.moveTo(this.startX, this.startY);
     } else if(this.activeTool === 'rectangle') {
@@ -845,7 +852,6 @@ class DrawingCanvas {
       case 'brush':
         this.ctx.lineTo(x, y);
         this.ctx.lineWidth = 14;
-        this.ctx.globalCompositeOperation = 'xor';
         this.ctx.stroke();
         break;
       case 'rectangle':
