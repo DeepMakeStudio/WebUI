@@ -838,14 +838,23 @@ class DrawingCanvas {
       this.ctx.globalCompositeOperation = operation
       this.ctx.beginPath();
       this.ctx.moveTo(this.startX, this.startY);
-    } else if(this.activeTool === 'rectangle') {
-      // resizable rectangle
+    } else if(this.activeTool === 'line') {
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.startX, this.startY);
+    } else if(this.activeTool === 'point') {
+      const radius = 5;
+      this.ctx.beginPath();
+      this.ctx.arc(this.startX, this.startY, radius, 0, Math.PI * 2, false);
+      this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      this.ctx.fill();
+      this.ctx.closePath();
     }
   }
 
   draw(event) {
     const [x, y] = [event.offsetX, event.offsetY];
     if(!this.isDrawing /*|| !this.isWithinDrawArea(x, y)*/) return;
+    const currentMask = this.frameMasksTracker[this.currentFrameNumber].mask;
     this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
 
     switch (this.activeTool) {
@@ -856,12 +865,19 @@ class DrawingCanvas {
         break;
       case 'rectangle':
         this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+        if(currentMask) this.ctx.putImageData(currentMask, 0, 0);
         this.ctx.lineWidth = 2;
         this.ctx.globalCompositeOperation = 'xor';
         this.ctx.strokeRect(this.startX, this.startY, x - this.startX, y - this.startY);
         break;
       case 'line':
-        
+        this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+        if(currentMask) this.ctx.putImageData(currentMask, 0, 0);
+        this.ctx.beginPath();
+        this.ctx.lineWidth = 2;
+        this.ctx.moveTo(this.startX, this.startY);
+        this.ctx.lineTo(event.offsetX, event.offsetY);
+        this.ctx.stroke();
     }
   }
 
@@ -914,6 +930,9 @@ class DrawingCanvas {
     try {
       this.frameMasksTracker[frameNumber].mask = null;
       this.maskLayers.querySelector(`[data-frame-number="${frameNumber}"]`).remove();
+      if( frameNumber === this.currentFrameNumber ) {
+        this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+      }
     } catch(error) {
       console.error('failed to delete mask layer', error);
       alert('failed to delete mask layer')
