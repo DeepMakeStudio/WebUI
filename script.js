@@ -848,6 +848,9 @@ class DrawingCanvas {
       this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
       this.ctx.fill();
       this.ctx.closePath();
+    } else if(this.activeTool === 'paint') {
+      this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      this.ctx.fillFlood(this.startX, this.startY, 0);
     }
   }
 
