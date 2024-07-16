@@ -31,7 +31,7 @@
 }
 
 #layers {
-    min-height: 100px;
+    height: 160px;
     overflow-y: auto;
 }
 

@@ -802,6 +802,7 @@ class DrawingCanvas {
       }
       this.currentFrameNumber = frameNumber;
     }
+    this.showCorrespondingMasksLayers(frameNumber);
   }
 
   initEvents() {
@@ -923,6 +924,7 @@ class DrawingCanvas {
     close.innerHTML = `<iconify-icon icon="ic:round-close" width="25" flip="horizontal"></iconify-icon>`;
     layerContainer.append(close);
     this.maskLayers.append(layerContainer);
+    this.showCorrespondingMasksLayers(frame.frameNumber);
     /*const image = this.drawingCanvas.toDataURL();
     const imageFile = this.dataURLtoFile(image, 'mask');
     const imageLayer = new ImageLayer(imageFile);
@@ -940,6 +942,17 @@ class DrawingCanvas {
       console.error('failed to delete mask layer', error);
       alert('failed to delete mask layer')
     }
+  }
+
+  showCorrespondingMasksLayers(frameNumber) {
+    const layers = this.maskLayers.querySelectorAll(`[data-frame-number]`);
+    layers.forEach(layer => {
+      if( layer.getAttribute('data-frame-number') == frameNumber ) {
+        layer.style.display = 'flex';
+      } else {
+        layer.style.display = 'none';
+      }
+    });
   }
 
   isWithinDrawArea(x, y) {
