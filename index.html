@@ -75,39 +75,58 @@
           <div class="select_plugin">
             <div>
               <label>Select Plugin</label>
-              <select>
-                <option>Bisenet</option>
+              <select id="select-plugin">
+                <option value="">Select plugin</option>
+                <option value="bisenet">Bisenet</option>
+                <option value="gsam">GSam</option>
               </select>
             </div>
-            <div>
+            <div data-endpoints="bisenet" style="display: block">
               <label>Select Endpoint</label>
               <select>
-                <option>Segment Face</option>
+                <option value="">Select endpoint</option>
+                <option value="segment_face">Segment Face</option>
+              </select>
+            </div>
+            <div data-endpoints="gsam">
+              <label>Select Endpoint</label>
+              <select>
+                <option value="">Select endpoint</option>
+                <option value="gsam_endpoint">gsam endpoint</option>
               </select>
             </div>
           </div>
-          <div class="endpoint_parameters">
+          <div class="endpoint_parameters" data-params="segment_face">
             <label>Select Facial Features</label>
             <div>
-              <label><input type="checkbox"/>skin</label>
-              <label><input type="checkbox"/>l_brow</label>
-              <label><input type="checkbox"/>r_brow</label>
-              <label><input type="checkbox"/>l_eye</label>
-              <label><input type="checkbox"/>r_eye</label>
-              <label><input type="checkbox"/>eye_g</label>
-              <label><input type="checkbox"/>l_ear</label>
-              <label><input type="checkbox"/>r_ear</label>
-              <label><input type="checkbox"/>ear_r</label>
-              <label><input type="checkbox"/>nose</label>
-              <label><input type="checkbox"/>mouth</label>
-              <label><input type="checkbox"/>u_lip</label>
-              <label><input type="checkbox"/>l_lip</label>
-              <label><input type="checkbox"/>neck</label>
-              <label><input type="checkbox"/>neck_l</label>
-              <label><input type="checkbox"/>cloth</label>
-              <label><input type="checkbox"/>hair</label>
-              <label><input type="checkbox"/>hat</label>
+              <label><input type="checkbox" name="skin"/>skin</label>
+              <label><input type="checkbox" name="l_brow"/>l_brow</label>
+              <label><input type="checkbox" name="r_brow"/>r_brow</label>
+              <label><input type="checkbox" name="l_eye"/>l_eye</label>
+              <label><input type="checkbox" name="l_eye"/>l_eye</label>
+              <label><input type="checkbox" name="eye_g"/>eye_g</label>
+              <label><input type="checkbox" name="l_ear"/>l_ear</label>
+              <label><input type="checkbox" name="r_ear"/>r_ear</label>
+              <label><input type="checkbox" name="ear_r"/>ear_r</label>
+              <label><input type="checkbox" name="nose"/>nose</label>
+              <label><input type="checkbox" name="mouth"/>mouth</label>
+              <label><input type="checkbox" name="u_lip"/>u_lip</label>
+              <label><input type="checkbox" name="l_lip"/>l_lip</label>
+              <label><input type="checkbox" name="neck"/>neck</label>
+              <label><input type="checkbox" name="neck_l"/>neck_l</label>
+              <label><input type="checkbox" name="cloth"/>cloth</label>
+              <label><input type="checkbox" name="hair"/>hair</label>
+              <label><input type="checkbox" name="hat"/>hat</label>
             </div>
+          </div>
+          <div class="endpoint_parameters" data-params="gsam_endpoint">
+            <label>Prompt</label>
+            <div>
+              <textarea></textarea>
+            </div>
+          </div>
+          <div style="margin: 15px;">
+            <button id="start-render" class="btn-primary reset-default">Start Render</button>
           </div>
         </div>
      </section>

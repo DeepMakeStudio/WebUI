@@ -974,6 +974,47 @@ class DrawingCanvas {
   }
 }
 
+class Plugins {
+  constructor() {
+    this.plugin = null;
+    this.endpoint = null;
+    this.pluginsEl = document.querySelector('#plugins');
+    this.pluginSelect = document.querySelector('#select-plugin');
+    this.endpointSelect = document.querySelectorAll('#plugins [data-endpoints]');
+    
+    this.pluginSelect.addEventListener('change', (event) => {
+      this.plugin = event.target.value;
+      const endpoints = this.pluginsEl.querySelectorAll(`[data-endpoints]`);
+      endpoints.forEach(endpoint => {
+        if( endpoint.getAttribute('data-endpoints') === this.plugin ) {
+          endpoint.style.display = 'block';
+        } else {
+          endpoint.style.display = 'none';
+        }
+      });
+    });
+
+    this.endpointSelect.forEach(endpoint => {
+      endpoint.addEventListener('change', (event) => {
+        this.endpoint = event.target.value;
+        this.showParams();
+      });
+    });
+  }
+
+  showParams() {
+    const params = this.pluginsEl.querySelectorAll('[data-params]');
+    params.forEach(param => {
+      console.log(param.getAttribute('data-params') === this.endpoint)
+      if( param.getAttribute('data-params') === this.endpoint ) {
+        param.style.display = 'block';
+      } else {
+        param.style.display = 'none';
+      }
+    });
+  }
+}
+
 class Player {
 
   constructor() {
@@ -1012,6 +1053,7 @@ class Player {
     window.requestAnimationFrame(this.loop.bind(this));
 
     this.drawingCanvas = new DrawingCanvas(this.width, this.height);
+    this.plugins = new Plugins();
 
     this.setupPinchHadler(this.canvas_holder,
       (function(scale, rotation) {
