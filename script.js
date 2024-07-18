@@ -653,7 +653,7 @@ class VideoLayer extends RenderedLayer {
     let name = this.name;
     for (let i = 0; i < d * fps; ++i) {
       let frame = await this.seek(i / fps);
-      player.drawingCanvas.frameMasksTracker.push({frameNumber: i, mask: null});
+      player.drawingCanvas.frameMasksTracker.push({frameNumber: i, mask: []});
       let sum = 0;
       for (let j = 0; j < frame.data.length; ++j) {
         sum += frame.data[j];
@@ -768,7 +768,9 @@ class DrawingCanvas {
     this.maskLayers = document.querySelector('#mask-layers');
     this.ctx = this.drawingCanvas.getContext('2d');
     this.frameMasksTracker = [];
+    //this.selectedMaskLayer = null;
     this.currentFrameNumber = -1;
+    this.selectedLayerId = null;
     this.activeTool = null;
     this.isDrawing = false;
     this.isErasing = false;
@@ -794,9 +796,11 @@ class DrawingCanvas {
 
   drawCurrentFrameMask(frameNumber) {
     if( this.currentFrameNumber !== frameNumber ) {
-      if( this.frameMasksTracker[frameNumber].mask ) {
+      if( this.frameMasksTracker[frameNumber].mask.length ) {
         const snapshot = this.frameMasksTracker[frameNumber].mask;
-        this.ctx.putImageData(snapshot, 0, 0);
+        snapshot.forEach(mask => {
+          this.ctx.putImageData(mask.mask, 0, 0);
+        });
       } else {
         this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
       }
@@ -869,14 +873,22 @@ class DrawingCanvas {
         break;
       case 'rectangle':
         this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
-        if(currentMask) this.ctx.putImageData(currentMask, 0, 0);
+        if(currentMask) {
+          currentMask.forEach(mask => {
+            this.ctx.putImageData(mask.mask, 0, 0);
+          });
+        }
         this.ctx.lineWidth = 2;
         this.ctx.globalCompositeOperation = 'xor';
         this.ctx.strokeRect(this.startX, this.startY, x - this.startX, y - this.startY);
         break;
       case 'line':
         this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
-        if(currentMask) this.ctx.putImageData(currentMask, 0, 0);
+        if(currentMask) {
+          currentMask.forEach(mask => {
+            this.ctx.putImageData(mask.mask, 0, 0);
+          });
+        }
         this.ctx.beginPath();
         this.ctx.lineWidth = 2;
         this.ctx.moveTo(this.startX, this.startY);
@@ -888,12 +900,18 @@ class DrawingCanvas {
   stopDrawing() {
     if(this.isDrawing && this.activeTool !== null) {
       this.ctx.closePath();
-      const canvasSnapshot = this.ctx.getImageData(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
       const frame = this.frameMasksTracker[this.getCurrentFrameFromTracker()];
-      frame.mask = canvasSnapshot;
-      Object.defineProperty(frame, 'mask', canvasSnapshot);
-      this.updateMaskLayer(frame);
-      //this.addMaskLayer();
+      if(!this.selectedLayerId || !frame.mask.find(mask => mask.layer_id === this.selectedLayerId)) {
+        const canvasSnapshot = {layer_id: Math.random(), mask: this.ctx.getImageData(0, 0, this.drawingCanvas.width, this.drawingCanvas.height)};
+        frame.mask.push(canvasSnapshot);
+        Object.defineProperty(frame, 'mask', [canvasSnapshot]);
+        frame.mask.forEach((mask) => {
+          this.updateMaskLayer(this.currentFrameNumber, mask.layer_id);
+        });
+      } else {
+        const selectedLayer = frame.mask.find(mask => mask.layer_id === this.selectedLayerId);
+        selectedLayer.mask = this.ctx.getImageData(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+      }
     }
     this.isDrawing = false;
   }
@@ -902,8 +920,8 @@ class DrawingCanvas {
     return this.frameMasksTracker.findIndex(frame => frame.frameNumber === this.currentFrameNumber);
   }
 
-  updateMaskLayer(frame) {
-    if( this.maskLayers.querySelector(`[data-frame-number="${frame.frameNumber}"]`) ) {
+  updateMaskLayer(frameNumber, layerId) {
+    if( this.maskLayers.querySelector(`[data-layer-id="${layerId}"]`) ) {
       return;
     }
     const layerContainer = document.createElement('div');
@@ -915,25 +933,43 @@ class DrawingCanvas {
     thumbCanvas.height = 68.4;
     const ctx = thumbCanvas.getContext("2d");
     const name = document.createElement('span');
-    close.addEventListener('click', () => this.deleteMaskLayer(frame.frameNumber));
-    layerContainer.setAttribute('data-frame-number', frame.frameNumber);
-    ctx.putImageData(frame.mask, 0, 0);
-    name.append(`${frame.frameNumber} - Bisenet_0_0_250_300`);
+    close.addEventListener('click', () => this.deleteMaskLayer(frameNumber));
+    layerContainer.setAttribute('data-frame-number', frameNumber);
+    layerContainer.setAttribute('data-layer-id', layerId);
+    //ctx.putImageData(frame.mask, 0, 0);
+    name.append(`${frameNumber} - Bisenet_0_0_250_300`);
     layerContainer.append(thumbCanvas);
     layerContainer.append(name);
     close.innerHTML = `<iconify-icon icon="ic:round-close" width="25" flip="horizontal"></iconify-icon>`;
     layerContainer.append(close);
     this.maskLayers.append(layerContainer);
-    this.showCorrespondingMasksLayers(frame.frameNumber);
+    this.showCorrespondingMasksLayers(frameNumber);
+    this.selectMaskLayer(layerId);
+    layerContainer.addEventListener('click', () => {
+      this.selectMaskLayer(layerId);
+      //this.selectMaskLayer(frame.frameNumber);
+    });
+    document.querySelector('#layers').scrollTop = document.querySelector('#layers').scrollHeight;
     /*const image = this.drawingCanvas.toDataURL();
     const imageFile = this.dataURLtoFile(image, 'mask');
     const imageLayer = new ImageLayer(imageFile);
     player.add(imageLayer);*/
   }
 
+  selectMaskLayer(layerId) {
+    if( this.selectedLayerId === layerId ) {
+      this.selectedLayerId = null;
+    } else {
+      this.selectedLayerId = layerId;
+    }
+    const selected = this.maskLayers.querySelector('.mask-layer-container.selected');
+    if(selected) selected.classList.remove('selected');
+    if(this.selectedLayerId) this.maskLayers.querySelector(`[data-layer-id="${this.selectedLayerId}"]`).classList.add('selected');
+  }
+
   deleteMaskLayer(frameNumber) {
     try {
-      this.frameMasksTracker[frameNumber].mask = null;
+      this.frameMasksTracker[frameNumber].mask = [];
       this.maskLayers.querySelector(`[data-frame-number="${frameNumber}"]`).remove();
       if( frameNumber === this.currentFrameNumber ) {
         this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
@@ -1884,6 +1920,10 @@ function upload() {
     f.value = '';
   });
   f.click();
+}
+
+function uploadMask() {
+  alert('upload mask')
 }
 
 function getSupportedMimeTypes() {

@@ -107,6 +107,11 @@
     gap: 10px;
     padding: 4px 0;
     box-sizing: border-box;
+    border-left: solid 4px transparent;
+}
+
+.mask-layer-container.selected {
+    border-left-color: #7f4dff;
 }
 
 .mask-layer-container canvas {

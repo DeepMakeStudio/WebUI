@@ -175,12 +175,17 @@ a:visited {
   margin: 5px;
 }
 
-#layers div {
+#layers > div {
   border-left: solid rgba(210, 210, 210, 0) 4px;
 }
 
-#layers .selected {
+/*#layers .selected {
   border-left: solid #7f4dff 4px;
+}*/
+
+#mask-layers {
+  margin-top: 2px;
+  border-left: none !important;
 }
 
 #foreground #time {
