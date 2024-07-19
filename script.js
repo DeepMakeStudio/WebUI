@@ -766,6 +766,7 @@ class DrawingCanvas {
     this.drawingTools = document.querySelectorAll('#drawing-tools [data-tool]');
     this.canvasHolder = document.querySelector('#drawing-canvas');
     this.maskLayers = document.querySelector('#mask-layers');
+    this.newMaskBtn = document.querySelector('#new-mask');
     this.ctx = this.drawingCanvas.getContext('2d');
     this.frameMasksTracker = [];
     //this.selectedMaskLayer = null;
@@ -798,9 +799,13 @@ class DrawingCanvas {
     if( this.currentFrameNumber !== frameNumber ) {
       if( this.frameMasksTracker[frameNumber].mask.length ) {
         const snapshot = this.frameMasksTracker[frameNumber].mask;
-        snapshot.forEach(mask => {
+        const selectedLayerMask = snapshot.find(mask => mask.layer_id === this.selectedLayerId);
+        if(selectedLayerMask && selectedLayerMask.mask !== null) {
+          this.ctx.putImageData(selectedLayerMask.mask, 0, 0);
+        }
+        /*snapshot.forEach(mask => {
           this.ctx.putImageData(mask.mask, 0, 0);
-        });
+        });*/
       } else {
         this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
       }
@@ -813,6 +818,24 @@ class DrawingCanvas {
     this.drawingCanvas.addEventListener('mousedown', (event) => this.startDrawing(event));
     this.drawingCanvas.addEventListener('mousemove', (event) => this.draw(event));
     this.drawingCanvas.addEventListener('mouseup', (event) => this.stopDrawing(event));
+    this.newMaskBtn.addEventListener('click', () => {
+      this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+      this.newMask(this.ctx.getImageData(0, 0, this.drawingCanvas.width, this.drawingCanvas.height));
+    });
+  }
+
+  getCurrentFrameFromTracker() {
+    return this.frameMasksTracker.findIndex(frame => frame.frameNumber === this.currentFrameNumber);
+  }
+
+  newMask(maskImg) {
+    const frame = this.frameMasksTracker[this.getCurrentFrameFromTracker()];
+    const canvasSnapshot = {layer_id: Math.random(), mask: maskImg};
+    frame.mask.push(canvasSnapshot);
+    Object.defineProperty(frame, 'mask', [canvasSnapshot]);
+    frame.mask.forEach((mask) => {
+      this.updateMaskLayer(this.currentFrameNumber, mask.layer_id);
+    });
   }
 
   switchTool(tool) {
@@ -902,22 +925,14 @@ class DrawingCanvas {
       this.ctx.closePath();
       const frame = this.frameMasksTracker[this.getCurrentFrameFromTracker()];
       if(!this.selectedLayerId || !frame.mask.find(mask => mask.layer_id === this.selectedLayerId)) {
-        const canvasSnapshot = {layer_id: Math.random(), mask: this.ctx.getImageData(0, 0, this.drawingCanvas.width, this.drawingCanvas.height)};
-        frame.mask.push(canvasSnapshot);
-        Object.defineProperty(frame, 'mask', [canvasSnapshot]);
-        frame.mask.forEach((mask) => {
-          this.updateMaskLayer(this.currentFrameNumber, mask.layer_id);
-        });
+        const image = this.ctx.getImageData(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+        this.newMask(image);
       } else {
         const selectedLayer = frame.mask.find(mask => mask.layer_id === this.selectedLayerId);
         selectedLayer.mask = this.ctx.getImageData(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
       }
     }
     this.isDrawing = false;
-  }
-
-  getCurrentFrameFromTracker() {
-    return this.frameMasksTracker.findIndex(frame => frame.frameNumber === this.currentFrameNumber);
   }
 
   updateMaskLayer(frameNumber, layerId) {
@@ -933,19 +948,23 @@ class DrawingCanvas {
     thumbCanvas.height = 68.4;
     const ctx = thumbCanvas.getContext("2d");
     const name = document.createElement('span');
-    close.addEventListener('click', () => this.deleteMaskLayer(frameNumber));
+    //close.addEventListener('click', () => this.deleteMaskLayer(frameNumber));
     layerContainer.setAttribute('data-frame-number', frameNumber);
     layerContainer.setAttribute('data-layer-id', layerId);
     //ctx.putImageData(frame.mask, 0, 0);
     name.append(`${frameNumber} - Bisenet_0_0_250_300`);
     layerContainer.append(thumbCanvas);
     layerContainer.append(name);
-    close.innerHTML = `<iconify-icon icon="ic:round-close" width="25" flip="horizontal"></iconify-icon>`;
+    close.innerHTML = `<iconify-icon class="delete-layer" icon="ic:round-close" width="25" flip="horizontal"></iconify-icon>`;
     layerContainer.append(close);
     this.maskLayers.append(layerContainer);
     this.showCorrespondingMasksLayers(frameNumber);
     this.selectMaskLayer(layerId);
-    layerContainer.addEventListener('click', () => {
+    layerContainer.addEventListener('click', (event) => {
+      if( event.target.classList.contains('delete-layer')) {
+        this.deleteMaskLayer(frameNumber);
+        return;
+      }
       this.selectMaskLayer(layerId);
       //this.selectMaskLayer(frame.frameNumber);
     });
@@ -957,21 +976,28 @@ class DrawingCanvas {
   }
 
   selectMaskLayer(layerId) {
+    this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
     if( this.selectedLayerId === layerId ) {
       this.selectedLayerId = null;
     } else {
       this.selectedLayerId = layerId;
+      const snapshot = this.frameMasksTracker[this.currentFrameNumber].mask;
+      const selectedLayerMask = snapshot.find(mask => mask.layer_id === layerId);
+      if( selectedLayerMask && selectedLayerMask.mask ) {
+        this.ctx.putImageData(selectedLayerMask.mask, 0, 0);
+      }
     }
     const selected = this.maskLayers.querySelector('.mask-layer-container.selected');
     if(selected) selected.classList.remove('selected');
     if(this.selectedLayerId) this.maskLayers.querySelector(`[data-layer-id="${this.selectedLayerId}"]`).classList.add('selected');
   }
 
-  deleteMaskLayer(frameNumber) {
+  deleteMaskLayer(frameNumber, layerId = this.selectedLayerId) {
     try {
-      this.frameMasksTracker[frameNumber].mask = [];
-      this.maskLayers.querySelector(`[data-frame-number="${frameNumber}"]`).remove();
-      if( frameNumber === this.currentFrameNumber ) {
+      const layer = this.frameMasksTracker[frameNumber].mask.findIndex(mask => mask.layer_id === layerId);
+      this.frameMasksTracker[frameNumber].mask.splice(layer, 1);
+      this.maskLayers.querySelector(`[data-frame-number="${frameNumber}"][data-layer-id="${layerId}"]`).remove();
+      if( frameNumber === this.currentFrameNumber && this.selectedLayerId === layerId ) {
         this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
       }
     } catch(error) {
