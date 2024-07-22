@@ -673,11 +673,11 @@ class VideoLayer extends RenderedLayer {
     }
     let time = ref_time - this.start_time;
     let index = Math.floor(time / 1000 * fps);
-    player.drawingCanvas.drawCurrentFrameMask(index)
     if (index < this.frames.length) {
       const frame = this.frames[index];
       this.ctx.putImageData(frame, 0, 0);
       this.drawScaled(this.ctx, ctx_out);
+      player.drawingCanvas.drawCurrentFrameMask(index);
     }
   }
 }
