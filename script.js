@@ -942,27 +942,95 @@ class DrawingCanvas {
     const layerContainer = document.createElement('div');
     const thumbCanvas = document.createElement('canvas');
     const close = document.createElement('button');
+    const optionsContainer = document.createElement('div');
+    optionsContainer.classList.add('options-container');
     layerContainer.classList.add('mask-layer-container');
     close.classList.add('reset-default');
     thumbCanvas.width = 130;
     thumbCanvas.height = 68.4;
     const ctx = thumbCanvas.getContext("2d");
-    const name = document.createElement('span');
+    const name = document.createElement('div');
     //close.addEventListener('click', () => this.deleteMaskLayer(frameNumber));
     layerContainer.setAttribute('data-frame-number', frameNumber);
     layerContainer.setAttribute('data-layer-id', layerId);
     //ctx.putImageData(frame.mask, 0, 0);
     name.append(`${frameNumber} - Bisenet_0_0_250_300`);
+    name.append(optionsContainer)
     layerContainer.append(thumbCanvas);
     layerContainer.append(name);
     close.innerHTML = `<iconify-icon class="delete-layer" icon="ic:round-close" width="25" flip="horizontal"></iconify-icon>`;
+    optionsContainer.innerHTML = `<button class="toggle-inverse">inverse</button><button class="toggle-binary">Mask View</button><button class="toggle-shinethrough">Mask Video</button>`
     layerContainer.append(close);
     this.maskLayers.append(layerContainer);
     this.showCorrespondingMasksLayers(frameNumber);
     this.selectMaskLayer(layerId);
     layerContainer.addEventListener('click', (event) => {
-      if( event.target.classList.contains('delete-layer')) {
+      const tc = event.target.classList;
+      if( tc.contains('delete-layer')) {
         this.deleteMaskLayer(frameNumber);
+        return;
+      }
+      if( tc.contains('toggle-inverse') ) {
+        if( !tc.contains('active') ) {
+          const imageData = this.ctx.getImageData(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+          const data = imageData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            const alpha = data[i + 3];
+            if (alpha !== 0) {
+                data[i] = 255;
+                data[i + 1] = 255;
+                data[i + 2] = 255;
+                data[i + 3] = 0;
+            } else {
+                data[i] = 255;
+                data[i + 1] = 255;
+                data[i + 2] = 255;
+                data[i + 3] = 178;
+            }
+          }
+          this.ctx.putImageData(imageData, 0, 0);
+          tc.add('active');
+        } else {
+          tc.remove('active');
+          this.redrawCurrentMask();
+        }
+        return;
+      }
+      if( tc.contains('toggle-binary') ) {
+        if( !tc.contains('active') ) {
+          const imageData = this.ctx.getImageData(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+          const data = imageData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            const alpha = data[i + 3];
+            if (alpha !== 0) {
+                data[i] = 255;
+                data[i + 1] = 255;
+                data[i + 2] = 255;
+                data[i + 3] = 255;
+            } else {
+                data[i] = 0;
+                data[i + 1] = 0;
+                data[i + 2] = 0;
+                data[i + 3] = 255;
+            }
+          }
+          this.ctx.putImageData(imageData, 0, 0);
+          tc.add('active');
+        } else {
+          tc.remove('active');
+          this.redrawCurrentMask();
+        }
+        return;
+      }
+      if( tc.contains('toggle-shinethrough') ) {
+        if( !tc.contains('active') ) {
+          this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+          this.ctx.fillRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+          tc.add('active');
+        } else {
+          tc.remove('active');
+          this.redrawCurrentMask();
+        }
         return;
       }
       this.selectMaskLayer(layerId);
@@ -975,17 +1043,21 @@ class DrawingCanvas {
     player.add(imageLayer);*/
   }
 
+  redrawCurrentMask(layerId = this.selectedLayerId) {
+    const snapshot = this.frameMasksTracker[this.currentFrameNumber].mask;
+    const selectedLayerMask = snapshot.find(mask => mask.layer_id === layerId);
+    if( selectedLayerMask && selectedLayerMask.mask ) {
+      this.ctx.putImageData(selectedLayerMask.mask, 0, 0);
+    }
+  }
+
   selectMaskLayer(layerId) {
     this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
     if( this.selectedLayerId === layerId ) {
       this.selectedLayerId = null;
     } else {
       this.selectedLayerId = layerId;
-      const snapshot = this.frameMasksTracker[this.currentFrameNumber].mask;
-      const selectedLayerMask = snapshot.find(mask => mask.layer_id === layerId);
-      if( selectedLayerMask && selectedLayerMask.mask ) {
-        this.ctx.putImageData(selectedLayerMask.mask, 0, 0);
-      }
+      this.redrawCurrentMask(layerId);
     }
     const selected = this.maskLayers.querySelector('.mask-layer-container.selected');
     if(selected) selected.classList.remove('selected');
@@ -1541,6 +1613,7 @@ class Player {
       ev.preventDefault();
     });
     preview.addEventListener('drop', (function(ev) {
+      console.log('UPDATE INDEX')
       preview.before(this.preview_dragging);
       let idx = this.layers.indexOf(this.preview_dragging_layer);
       if (idx > -1) {
