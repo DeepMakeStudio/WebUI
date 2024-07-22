@@ -2022,7 +2022,11 @@ function upload() {
 }
 
 function uploadMask() {
-  alert('upload mask')
+  const f = document.querySelector('#mask-filepicker');
+  f.addEventListener('input', (event) => {
+    console.log(event.target.files);
+  });
+  f.click();
 }
 
 function getSupportedMimeTypes() {
