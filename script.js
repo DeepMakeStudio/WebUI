@@ -667,15 +667,15 @@ class VideoLayer extends RenderedLayer {
     this.update_name(name);
   }
 
-  render(ctx_out, ref_time) {
+  async render(ctx_out, ref_time) {
     if (!this.ready) {
       return;
     }
     let time = ref_time - this.start_time;
     let index = Math.floor(time / 1000 * fps);
-    player.drawingCanvas.drawCurrentFrameMask(index)
     if (index < this.frames.length) {
       const frame = this.frames[index];
+      await player.drawingCanvas.drawCurrentFrameMask(index);
       this.ctx.putImageData(frame, 0, 0);
       this.drawScaled(this.ctx, ctx_out);
     }
@@ -772,6 +772,7 @@ class DrawingCanvas {
     //this.selectedMaskLayer = null;
     this.currentFrameNumber = -1;
     this.selectedLayerId = null;
+    this.showAllLayers = true;
     this.activeTool = null;
     this.isDrawing = false;
     this.isErasing = false;
@@ -796,22 +797,42 @@ class DrawingCanvas {
   }
 
   drawCurrentFrameMask(frameNumber) {
-    if( this.currentFrameNumber !== frameNumber ) {
-      if( this.frameMasksTracker[frameNumber].mask.length ) {
-        const snapshot = this.frameMasksTracker[frameNumber].mask;
-        const selectedLayerMask = snapshot.find(mask => mask.layer_id === this.selectedLayerId);
-        if(selectedLayerMask && selectedLayerMask.mask !== null) {
-          this.ctx.putImageData(selectedLayerMask.mask, 0, 0);
+    if( !this.showAllLayers ) {
+      if( this.currentFrameNumber !== frameNumber ) {
+        if( this.frameMasksTracker[frameNumber].mask.length ) {
+          const snapshot = this.frameMasksTracker[frameNumber].mask;
+          const selectedLayerMask = snapshot.find(mask => mask.layer_id === this.selectedLayerId);
+          if(selectedLayerMask && selectedLayerMask.mask !== null) {
+            this.ctx.putImageData(selectedLayerMask.mask, 0, 0);
+          }
+          /*snapshot.forEach(mask => {
+            this.ctx.putImageData(mask.mask, 0, 0);
+          });*/
+        } else {
+          this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
         }
-        /*snapshot.forEach(mask => {
-          this.ctx.putImageData(mask.mask, 0, 0);
-        });*/
-      } else {
-        this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+        this.currentFrameNumber = frameNumber;
       }
-      this.currentFrameNumber = frameNumber;
+      this.showCorrespondingMasksLayers(frameNumber);
+    } else {
+      if( this.frameMasksTracker[frameNumber].mask.length ) {
+        this.frameMasksTracker[frameNumber].mask.forEach(layer => {
+          createImageBitmap(layer.mask).then((imgBitmap) => {
+            console.log(imgBitmap)
+            this.ctx.drawImage(imgBitmap, 0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+          });
+        });
+      } else {
+        const imageData = this.ctx.createImageData(this.drawingCanvas.width, this.drawingCanvas.height);
+        for (let i = 0; i < imageData.data.length; i += 4) {
+            imageData.data[i] = 0;
+            imageData.data[i + 1] = 0;
+            imageData.data[i + 2] = 0;
+            imageData.data[i + 3] = 0;
+        }
+        this.ctx.putImageData(imageData, 0, 0);
+      }
     }
-    this.showCorrespondingMasksLayers(frameNumber);
   }
 
   initEvents() {
@@ -1062,6 +1083,10 @@ class DrawingCanvas {
     const selected = this.maskLayers.querySelector('.mask-layer-container.selected');
     if(selected) selected.classList.remove('selected');
     if(this.selectedLayerId) this.maskLayers.querySelector(`[data-layer-id="${this.selectedLayerId}"]`).classList.add('selected');
+  }
+
+  showAllMaskLayers(show) {
+    this.showAllLayers = show;
   }
 
   deleteMaskLayer(frameNumber, layerId = this.selectedLayerId) {
@@ -2067,6 +2092,7 @@ function getSupportedMimeTypes() {
 }
 
 function download(ev) {
+  player.drawingCanvas.showAllMaskLayers(true);
   if (ev.shiftKey) {
     exportToJson();
     return;
@@ -2079,7 +2105,7 @@ function download(ev) {
   const e_text = e.textContent;
   e.innerHTML = `<iconify-icon icon="svg-spinners:12-dots-scale-rotate" width="25" flip="horizontal"></iconify-icon>`;
   const chunks = [];
-  const stream = player.canvas.captureStream();
+  const stream = player.drawingCanvas.drawingCanvas.captureStream();
 
   let has_audio = false;
   for (let layer of player.layers) {
@@ -2113,6 +2139,7 @@ function download(ev) {
     e.textContent = e_text;
     player.pause();
     player.time = 0;
+    player.drawingCanvas.showAllMaskLayers(false);
   });
 }
 
