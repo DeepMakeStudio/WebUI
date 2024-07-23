@@ -1,0 +1,23 @@
+{
+  "name": "webui",
+  "version": "1.0.0",
+  "description": "[tutorial](https://bwasti.github.io/mebm/#https%3A%2F%2Fjott.live%2Fraw%2Ftutorial.json)",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "live-server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeepMakeStudio/WebUI.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DeepMakeStudio/WebUI/issues"
+  },
+  "homepage": "https://github.com/DeepMakeStudio/WebUI#readme",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

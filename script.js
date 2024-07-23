@@ -473,6 +473,9 @@ class ImageLayer extends MoveableLayer {
         this.width = this.img.naturalWidth;
         this.height = this.img.naturalHeight;
         this.ready = true;
+        player.drawingCanvas.setMediaType('image');
+        player.drawingCanvas.frameMasksTracker.push({frameNumber: 0, mask: []});
+        player.drawingCanvas.currentFrameNumber = 0;
       }).bind(this));
     }).bind(this), false);
     this.reader.readAsDataURL(file);
@@ -621,6 +624,7 @@ class VideoLayer extends RenderedLayer {
         }
         this.canvas.height = this.height;
         this.canvas.width = this.width;
+        player.drawingCanvas.setMediaType('video');
         this.convertToArrayBuffer();
       }).bind(this));
       this.video.src = this.reader.result;
@@ -768,6 +772,7 @@ class DrawingCanvas {
     this.maskLayers = document.querySelector('#mask-layers');
     this.newMaskBtn = document.querySelector('#new-mask');
     this.ctx = this.drawingCanvas.getContext('2d');
+    this.mediaType = 'video';
     this.frameMasksTracker = [];
     //this.selectedMaskLayer = null;
     this.currentFrameNumber = -1;
@@ -793,6 +798,36 @@ class DrawingCanvas {
     }
 
     this.initEvents();
+  }
+
+  setMediaType(type, media) {
+    this.mediaType = type;
+  }
+
+  uploadMedia(file) {
+    const body = new FormData();
+    body.append('file', file);
+
+    fetch('http://localhost:8000/image/upload', {
+      method: 'POST',
+      body: body,
+      mode: 'no-cors',
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    .then(response => {
+      console.log(response)
+      if (!response.ok) {
+        throw new Error('Network response was not ok ' + response.statusText);
+      }
+      return response.json();
+    })
+    .then(success => {
+      console.log(success)
+    }).catch(error => {
+      console.log(error);
+    })
   }
 
   drawCurrentFrameMask(frameNumber) {
@@ -821,6 +856,12 @@ class DrawingCanvas {
     this.newMaskBtn.addEventListener('click', () => {
       this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
       this.newMask(this.ctx.getImageData(0, 0, this.drawingCanvas.width, this.drawingCanvas.height));
+    });
+    document.querySelector('#filepicker').addEventListener('input', (e) => {
+      if(!uploadSupportedType(e.target.files)){return}
+      for (let file of e.target.files) {
+        this.uploadMedia(file);
+      }
     });
   }
 
