@@ -811,7 +811,6 @@ class DrawingCanvas {
     fetch('http://localhost:8000/image/upload', {
       method: 'POST',
       body: body,
-      mode: 'no-cors',
       headers: {
         'Accept': 'application/json'
       }
