@@ -776,7 +776,12 @@ class DrawingCanvas {
     this.frameMasksTracker = [];
     //this.selectedMaskLayer = null;
     this.currentFrameNumber = -1;
+    this.job = {
+      id: null,
+      status: null
+    };
     this.selectedLayerId = null;
+    this.uploadedImageId = null;
     this.activeTool = null;
     this.isDrawing = false;
     this.isErasing = false;
@@ -800,8 +805,50 @@ class DrawingCanvas {
     this.initEvents();
   }
 
-  setMediaType(type, media) {
+  setMediaType(type) {
     this.mediaType = type;
+    if( type === 'image' ) {
+      player.plugins.plugin = 'Gsam';
+      player.plugins.endpoint = 'get_mask';
+      player.plugins.showParams();
+    }
+  }
+
+  updateJobId(id) {
+    this.job.id = id;
+    this.getJob(id);
+  }
+
+  getJob(jobId) {
+    fetch(`http://localhost:8000/job/${jobId}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok ' + response.statusText);
+      }
+      return response.json();
+    })
+    .then(response => {
+      this.job.status = response.status;
+      if( response.status !== 'success' ) {
+        if( response.status !== 'Job failed' ) {
+          window.setTimeout(() => {
+            this.getJob(jobId);
+          }, 1000);
+        } else {
+          alert('Job Failed');
+        }
+      } else {
+        alert('Job completed');
+        console.log(response.output_mask);
+      }
+    }).catch(error => {
+      console.log(error);
+    })
   }
 
   uploadMedia(file) {
@@ -816,14 +863,13 @@ class DrawingCanvas {
       }
     })
     .then(response => {
-      console.log(response)
       if (!response.ok) {
         throw new Error('Network response was not ok ' + response.statusText);
       }
       return response.json();
     })
-    .then(success => {
-      console.log(success)
+    .then(response => {
+      this.uploadedImageId = response.image_id;
     }).catch(error => {
       console.log(error);
     })
@@ -1152,9 +1198,12 @@ class Plugins {
   constructor() {
     this.plugin = null;
     this.endpoint = null;
+    this.prompt = null;
     this.pluginsEl = document.querySelector('#plugins');
     this.pluginSelect = document.querySelector('#select-plugin');
     this.endpointSelect = document.querySelectorAll('#plugins [data-endpoints]');
+    this.startRenderButton = document.querySelector('#start-render');
+    this.promptAreaEl = document.querySelector('#promptarea');
     
     this.pluginSelect.addEventListener('change', (event) => {
       this.plugin = event.target.value;
@@ -1167,6 +1216,10 @@ class Plugins {
         }
       });
     });
+    
+    this.promptAreaEl.addEventListener('input', (event) => {
+      this.prompt = event.target.value;
+    });
 
     this.endpointSelect.forEach(endpoint => {
       endpoint.addEventListener('change', (event) => {
@@ -1174,18 +1227,61 @@ class Plugins {
         this.showParams();
       });
     });
+
+    this.startRenderButton.addEventListener('click', () => {
+      if( this.plugin === 'Gsam' ) {
+        if( this.endpoint === 'get_mask' ) {
+          const imageId = player.drawingCanvas.uploadedImageId;
+          if( this.prompt ) {
+            this.makePluginEndpointCall();
+          } else {
+            alert('Please provide a prompt');
+          }
+        }
+      }
+    });
   }
 
   showParams() {
     const params = this.pluginsEl.querySelectorAll('[data-params]');
     params.forEach(param => {
-      console.log(param.getAttribute('data-params') === this.endpoint)
       if( param.getAttribute('data-params') === this.endpoint ) {
         param.style.display = 'block';
       } else {
         param.style.display = 'none';
       }
     });
+  }
+
+  
+  makePluginEndpointCall() {
+    const url = `http://localhost:8000/plugins/call_endpoint/${this.plugin}/${this.endpoint}`;
+    const body = {};
+    if( this.plugin === 'Gsam' ) {
+      if( this.endpoint === 'get_mask' ) {
+        body.img = player.drawingCanvas.uploadedImageId;
+        body.prompt = this.prompt;
+      }
+    }
+    console.log(body)
+    fetch(url, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+      headers: {
+      'Content-Type': 'application/json',
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok ' + response.statusText);
+      }
+      return response.json();
+    })
+    .then(response => {
+      player.drawingCanvas.updateJobId(response.job_id);
+    }).catch(error => {
+      console.log(error);
+    })
   }
 }
 

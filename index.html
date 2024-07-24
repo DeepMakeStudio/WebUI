@@ -85,7 +85,7 @@
               <select id="select-plugin">
                 <option value="">Select plugin</option>
                 <option value="bisenet">Bisenet</option>
-                <option value="gsam">GSam</option>
+                <option value="Gsam">GSam</option>
               </select>
             </div>
             <div data-endpoints="bisenet" style="display: block">
@@ -95,11 +95,11 @@
                 <option value="segment_face">Segment Face</option>
               </select>
             </div>
-            <div data-endpoints="gsam">
+            <div data-endpoints="Gsam">
               <label>Select Endpoint</label>
               <select>
                 <option value="">Select endpoint</option>
-                <option value="gsam_endpoint">gsam endpoint</option>
+                <option value="get_mask">Get Mask</option>
               </select>
             </div>
           </div>
@@ -126,10 +126,10 @@
               <label><input type="checkbox" name="hat"/>hat</label>
             </div>
           </div>
-          <div class="endpoint_parameters" data-params="gsam_endpoint">
+          <div class="endpoint_parameters" data-params="get_mask">
             <label>Prompt</label>
             <div>
-              <textarea></textarea>
+              <textarea id="promptarea"></textarea>
             </div>
           </div>
           <div style="margin: 15px;">
