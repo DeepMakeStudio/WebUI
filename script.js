@@ -839,16 +839,41 @@ class DrawingCanvas {
           window.setTimeout(() => {
             this.getJob(jobId);
           }, 1000);
+          //this.getMaskImage(this.currentFrameNumber, '1b86257f-dfc3-47ae-be9d-e284ee52f0bc') //TEMP
         } else {
           alert('Job Failed');
         }
       } else {
-        alert('Job completed');
-        console.log(response.output_mask);
+        this.getMaskImage(this.currentFrameNumber, response.outputMask);
       }
     }).catch(error => {
       console.log(error);
     })
+  }
+
+  getMaskImage(frameNumber, maskId) {
+    fetch(`http://localhost:8000/image/get/${maskId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'image/png'
+      }
+    }).then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok ' + response.statusText);
+      }
+      return response.blob();
+    })
+    .then(response => {
+      this.applyMaskToFrame(frameNumber, `http://localhost:8000/image/get/${maskId}`);
+    }).catch(error => {
+      console.log(error);
+    })
+  }
+
+  applyMaskToFrame(frameNumber, maskURL) {
+    this.pngToImageData(maskURL, (imageData) => {
+      this.newMask(imageData, frameNumber);
+    });
   }
 
   uploadMedia(file) {
@@ -914,8 +939,8 @@ class DrawingCanvas {
     return this.frameMasksTracker.findIndex(frame => frame.frameNumber === this.currentFrameNumber);
   }
 
-  newMask(maskImg) {
-    const frame = this.frameMasksTracker[this.getCurrentFrameFromTracker()];
+  newMask(maskImg, frameNumber) {
+    const frame = !frameNumber ? this.frameMasksTracker[this.getCurrentFrameFromTracker()] : this.frameMasksTracker[frameNumber];
     const canvasSnapshot = {layer_id: Math.random(), mask: maskImg};
     frame.mask.push(canvasSnapshot);
     Object.defineProperty(frame, 'mask', [canvasSnapshot]);
@@ -1191,6 +1216,40 @@ class DrawingCanvas {
             u8arr[n] = bstr.charCodeAt(n);
         }
         return new File([u8arr], filename, {type:mime});
+  }
+
+  pngToImageData(imgPath, callback) {
+    // Create a new Image object
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    
+    // Set the source of the image to the provided PNG path
+    img.src = imgPath;
+
+    // Wait for the image to load
+    img.onload = () => {
+        // Create a canvas element
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set the canvas dimensions to match the image dimensions
+        canvas.width = this.drawingCanvas.width;
+        canvas.height = this.drawingCanvas.height;
+
+        // Draw the image on the canvas
+        ctx.drawImage(img, 0, 0);
+
+        // Get the ImageData object from the canvas
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        // Pass the ImageData object to the callback function
+        callback(imageData);
+    };
+
+    // Handle image loading errors
+    img.onerror = (err) => {
+        console.error('Error loading image:', err);
+    };
   }
 }
 
