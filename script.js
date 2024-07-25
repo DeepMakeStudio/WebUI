@@ -820,7 +820,7 @@ class DrawingCanvas {
   }
 
   getJob(jobId) {
-    fetch(`http://localhost:8000/job/${jobId}`, {
+    fetch(`http://nikkelitous.com:17495/job/${jobId}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
@@ -834,7 +834,7 @@ class DrawingCanvas {
     })
     .then(response => {
       this.job.status = response.status;
-      if( response.status !== 'success' ) {
+      if( response.status !== 'Success' ) {
         if( response.status !== 'Job failed' ) {
           window.setTimeout(() => {
             this.getJob(jobId);
@@ -844,7 +844,7 @@ class DrawingCanvas {
           alert('Job Failed');
         }
       } else {
-        this.getMaskImage(this.currentFrameNumber, response.outputMask);
+        this.getMaskImage(this.currentFrameNumber, response.output_mask);
       }
     }).catch(error => {
       console.log(error);
@@ -852,7 +852,7 @@ class DrawingCanvas {
   }
 
   getMaskImage(frameNumber, maskId) {
-    fetch(`http://localhost:8000/image/get/${maskId}`, {
+    fetch(`http://nikkelitous.com:17495/image/get/${maskId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'image/png'
@@ -864,7 +864,7 @@ class DrawingCanvas {
       return response.blob();
     })
     .then(response => {
-      this.applyMaskToFrame(frameNumber, `http://localhost:8000/image/get/${maskId}`);
+      this.applyMaskToFrame(frameNumber, `http://nikkelitous.com:17495/image/get/${maskId}`);
     }).catch(error => {
       console.log(error);
     })
@@ -880,7 +880,7 @@ class DrawingCanvas {
     const body = new FormData();
     body.append('file', file);
 
-    fetch('http://localhost:8000/image/upload', {
+    fetch('http://nikkelitous.com:17495/image/upload', {
       method: 'POST',
       body: body,
       headers: {
@@ -1314,7 +1314,7 @@ class Plugins {
 
   
   makePluginEndpointCall() {
-    const url = `http://localhost:8000/plugins/call_endpoint/${this.plugin}/${this.endpoint}`;
+    const url = `http://nikkelitous.com:17495/plugins/call_endpoint/${this.plugin}/${this.endpoint}`;
     const body = {};
     if( this.plugin === 'Gsam' ) {
       if( this.endpoint === 'get_mask' ) {
