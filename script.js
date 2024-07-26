@@ -473,6 +473,7 @@ class ImageLayer extends MoveableLayer {
         this.width = this.img.naturalWidth;
         this.height = this.img.naturalHeight;
         this.ready = true;
+        player.updateDrawArea(this.width, this.height);
         player.drawingCanvas.setMediaType('image');
         player.drawingCanvas.frameMasksTracker.push({frameNumber: 0, mask: []});
         player.drawingCanvas.currentFrameNumber = 0;
@@ -803,6 +804,11 @@ class DrawingCanvas {
     }
 
     this.initEvents();
+  }
+
+  updateDrawingArea(width, height) {
+    this.drawArea.width = width;
+    this.drawArea.height = height;
   }
 
   setMediaType(type) {
@@ -1404,8 +1410,7 @@ class Player {
   }
 
   updateDrawArea(videoWidth, videoHeight) {
-    this.drawingCanvas.drawArea.width = videoWidth;
-    this.drawingCanvas.drawArea.height = videoHeight;
+    this.drawingCanvas.updateDrawingArea(videoWidth, videoHeight);
   }
 
   dumpToJson() {
