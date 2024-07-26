@@ -959,11 +959,13 @@ class DrawingCanvas {
     const active = [...this.drawingTools].find(btn => btn.classList.contains('active'));
     if( this.activeTool === tool ) {
       this.activeTool = null;
+      this.canvasHolder.classList.add('passthrough');
       active.classList.remove('active');
       return;
     }
     this.activeTool = tool;
     player.pause();
+    this.canvasHolder.classList.remove('passthrough');
     if(active) active.classList.remove('active');
     if(tool) [...this.drawingTools].find(btn => btn.getAttribute('data-tool') === tool).classList.add('active');
   }

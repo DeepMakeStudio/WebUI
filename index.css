@@ -7,6 +7,10 @@
     overflow: hidden;
 }
 
+#drawing-canvas.passthrough {
+    pointer-events: none;
+}
+
 #playback-controls {
     position: absolute;
     bottom: 20px;
