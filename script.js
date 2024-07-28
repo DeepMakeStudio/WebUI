@@ -231,6 +231,7 @@ class RenderedLayer {
     ctx_out.drawImage((video ? ctx : ctx.canvas),
       0, 0, width, height,
       offset_width, offset_height, ratio * width, ratio * height);
+    player.drawingCanvas.updateScaleFactor(0, 0, width, height, offset_width, offset_height, ratio * width, ratio * height);
   }
 }
 
@@ -796,6 +797,9 @@ class DrawingCanvas {
       x: (canvasWidth - 500) / 2,
       y: (canvasHeight - 500) / 2,
     }
+    this.scaleFactor = {
+
+    }
 
     this.canvasHolder.append(this.drawingCanvas);
 
@@ -809,7 +813,112 @@ class DrawingCanvas {
   updateDrawingArea(width, height) {
     this.drawArea.width = width;
     this.drawArea.height = height;
+    this.drawArea.y = (this.drawingCanvas.height - height) / 2;
+    this.drawArea.x = (this.drawingCanvas.width - width) / 2;
   }
+
+  /*
+  drawScaled(ctx, ctx_out, video = false) {
+    const width = video ? ctx.videoWidth : ctx.canvas.clientWidth;
+    const height = video ? ctx.videoHeight : ctx.canvas.clientHeight;
+    const in_ratio = width / height;
+    const out_ratio = ctx_out.canvas.clientWidth / ctx_out.canvas.clientHeight;
+    let ratio = 1;
+    let offset_width = 0;
+    let offset_height = 0;
+    if (in_ratio > out_ratio) { // video is wider
+      // match width
+      ratio = ctx_out.canvas.clientWidth / width;
+      offset_height = (ctx_out.canvas.clientHeight - (ratio * height)) / 2;
+    } else { // out is wider
+      // match height
+      ratio = ctx_out.canvas.clientHeight / height;
+      offset_width = (ctx_out.canvas.clientWidth - (ratio * width)) / 2;
+    }
+    ctx_out.drawImage((video ? ctx : ctx.canvas),
+      0, 0, width, height,
+      offset_width, offset_height, ratio * width, ratio * height);
+  }
+  */
+  updateScaleFactor(x, y, width, height, offset_width, offset_height, width_ratio, height_ratio) {
+    this.scaleFactor = {
+      x, y, width, height, offset_width, offset_height, width_ratio, height_ratio
+    }
+  }
+
+  async drawScaled(image, trim = false) {
+    const trimmedImage = trim ? this.trimImageData(image, this.drawArea.width, this.drawArea.height, this.drawArea.x, this.drawArea.y, false) : image;
+    //const bitmap = await this.imageDataToBitmap(trimmedImage);
+    this.imageDataToBitmap(trimmedImage)
+    .then(bitmap => {
+      this.scaleImageData(bitmap, true);
+    })
+    .catch(error => {
+        console.error('Failed to create ImageBitmap:', error);
+    });
+    
+    //this.ctx.putImageData(scaledImage, this.drawArea.x, this.drawArea.y);
+  }
+
+  scaleImageData(image) {
+    this.ctx.drawImage(
+      image,
+      0, 0,
+      this.scaleFactor.width,
+      this.scaleFactor.height,
+      this.scaleFactor.offset_width,
+      this.scaleFactor.offset_height,
+      this.scaleFactor.width_ratio,
+      this.scaleFactor.height_ratio
+    );
+  }
+
+  trimImageData(imageData, width, height, x, y, returnImageData = false) {
+    // Create a temporary canvas to hold the trimmed image
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    
+    // Set the dimensions of the temporary canvas
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    
+    // Create an ImageData object from the input imageData
+    const originalCanvas = document.createElement('canvas');
+    const originalCtx = originalCanvas.getContext('2d');
+    originalCanvas.width = imageData.width;
+    originalCanvas.height = imageData.height;
+    originalCtx.putImageData(imageData, 0, 0);
+  
+    // Draw the specified portion of the original imageData onto the temporary canvas
+    tempCtx.drawImage(originalCanvas, x, y, width, height, 0, 0, width, height);
+  
+    // If the returnImageData flag is true, return the ImageData
+    if (returnImageData) {
+      return tempCtx.getImageData(0, 0, width, height);
+    }
+    
+    // Create a new image from the temporary canvas
+    const trimmedImage = new Image();
+    trimmedImage.src = tempCanvas.toDataURL();
+    
+    return trimmedImage;
+  }
+
+  async imageDataToBitmap(imageData) {
+    try {
+        // Ensure the browser supports createImageBitmap
+        if (typeof createImageBitmap !== 'undefined') {
+            // Convert ImageData to ImageBitmap
+            const bitmap = await createImageBitmap(imageData);
+            return bitmap;
+        } else {
+            throw new Error('createImageBitmap is not supported in this browser.');
+        }
+    } catch (error) {
+        console.error('Error converting ImageData to Bitmap:', error);
+        throw error;
+    }
+}
 
   setMediaType(type) {
     this.mediaType = type;
@@ -912,7 +1021,7 @@ class DrawingCanvas {
         const snapshot = this.frameMasksTracker[frameNumber].mask;
         const selectedLayerMask = snapshot.find(mask => mask.layer_id === this.selectedLayerId);
         if(selectedLayerMask && selectedLayerMask.mask !== null) {
-          this.ctx.putImageData(selectedLayerMask.mask, 0, 0);
+          this.drawScaled(selectedLayerMask.mask, false);
         }
         /*snapshot.forEach(mask => {
           this.ctx.putImageData(mask.mask, 0, 0);
@@ -1017,7 +1126,7 @@ class DrawingCanvas {
         this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
         if(currentMask) {
           currentMask.forEach(mask => {
-            this.ctx.putImageData(mask.mask, 0, 0);
+            this.drawScaled(mask.mask, true);
           });
         }
         this.ctx.lineWidth = 2;
@@ -1028,7 +1137,7 @@ class DrawingCanvas {
         this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
         if(currentMask) {
           currentMask.forEach(mask => {
-            this.ctx.putImageData(mask.mask, 0, 0);
+            this.drawScaled(mask.mask, true);
           });
         }
         this.ctx.beginPath();
@@ -1107,7 +1216,7 @@ class DrawingCanvas {
                 data[i + 3] = 178;
             }
           }
-          this.ctx.putImageData(imageData, 0, 0);
+          this.drawScaled(imageData, true);
           tc.add('active');
         } else {
           tc.remove('active');
@@ -1133,7 +1242,7 @@ class DrawingCanvas {
                 data[i + 3] = 255;
             }
           }
-          this.ctx.putImageData(imageData, 0, 0);
+          this.drawScaled(imageData, true);
           tc.add('active');
         } else {
           tc.remove('active');
@@ -1166,7 +1275,7 @@ class DrawingCanvas {
     const snapshot = this.frameMasksTracker[this.currentFrameNumber].mask;
     const selectedLayerMask = snapshot.find(mask => mask.layer_id === layerId);
     if( selectedLayerMask && selectedLayerMask.mask ) {
-      this.ctx.putImageData(selectedLayerMask.mask, 0, 0);
+      this.drawScaled(selectedLayerMask.mask, false);
     }
   }
 
