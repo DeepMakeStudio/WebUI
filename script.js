@@ -493,6 +493,7 @@ class ImageLayer extends MoveableLayer {
       let y = f[1] + this.canvas.height / 2 - this.height / 2;
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.ctx.drawImage(this.img, 0, 0, this.width, this.height, x, y, scale * this.width, scale * this.height);
+      player.drawingCanvas.updateScaleFactor(0, 0, this.width, this.height, x, y, scale * this.width, scale * this.height);
       this.drawScaled(this.ctx, ctx_out);
     }
   }
@@ -796,6 +797,7 @@ class DrawingCanvas {
       x: (canvasWidth - 500) / 2,
       y: (canvasHeight - 500) / 2,
     }
+    this.scaleFactor = {};
 
     this.canvasHolder.append(this.drawingCanvas);
 
@@ -809,6 +811,10 @@ class DrawingCanvas {
   updateDrawingArea(width, height) {
     this.drawArea.width = width;
     this.drawArea.height = height;
+  }
+
+  updateScaleFactor(sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight) {
+    this.scaleFactor = {sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight};
   }
 
   setMediaType(type) {
@@ -947,6 +953,7 @@ class DrawingCanvas {
 
   newMask(maskImg, frameNumber) {
     const frame = !frameNumber ? this.frameMasksTracker[this.getCurrentFrameFromTracker()] : this.frameMasksTracker[frameNumber];
+    console.log(maskImg)
     const canvasSnapshot = {layer_id: Math.random(), mask: maskImg};
     frame.mask.push(canvasSnapshot);
     Object.defineProperty(frame, 'mask', [canvasSnapshot]);
@@ -1245,7 +1252,8 @@ class DrawingCanvas {
         canvas.height = this.drawingCanvas.height;
 
         // Draw the image on the canvas
-        ctx.drawImage(img, 0, 0);
+        console.log(this.drawArea, this.scaleFactor)
+        ctx.drawImage(img, this.scaleFactor.sx, this.scaleFactor.sy, this.scaleFactor.sWidth, this.scaleFactor.sHeight, this.scaleFactor.dx, this.scaleFactor.dy, this.scaleFactor.dWidth, this.scaleFactor.dHeight);
 
         // Get the ImageData object from the canvas
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
