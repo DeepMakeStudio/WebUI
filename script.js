@@ -228,6 +228,7 @@ class RenderedLayer {
       ratio = ctx_out.canvas.clientHeight / height;
       offset_width = (ctx_out.canvas.clientWidth - (ratio * width)) / 2;
     }
+    player.drawingCanvas.redrawCurrentMask();
     ctx_out.drawImage((video ? ctx : ctx.canvas), 0, 0, width, height, offset_width, offset_height, ratio * width, ratio * height);
     //player.drawingCanvas.updateScaleFactor(0, 0, width, height, offset_width, offset_height, ratio * width, ratio * height);
   }
@@ -964,7 +965,17 @@ class DrawingCanvas {
       ratio = this.drawingCanvas.clientHeight / height;
       offset_width = (this.drawingCanvas.clientWidth - (ratio * width)) / 2;
     }
-    ctx_out.drawImage((video ? ctx : ctx), 0, 0, width, height, offset_width, offset_height, ratio * width, ratio * height);
+    ctx_out.drawImage(
+      (video ? ctx : ctx),
+      0, 
+      0,
+      width,
+      height,
+      offset_width,
+      offset_height,
+      ratio * width,
+      ratio * height
+    );
     //player.drawingCanvas.updateScaleFactor(0, 0, width, height, offset_width, offset_height, ratio * width, ratio * height);
   }
 
@@ -990,7 +1001,6 @@ class DrawingCanvas {
 
   newMask(maskImg, frameNumber) {
     const frame = !frameNumber ? this.frameMasksTracker[this.getCurrentFrameFromTracker()] : this.frameMasksTracker[frameNumber];
-    console.log(maskImg)
     const canvasSnapshot = {layer_id: Math.random(), mask: maskImg};
     frame.mask.push(canvasSnapshot);
     Object.defineProperty(frame, 'mask', [canvasSnapshot]);
@@ -1207,9 +1217,11 @@ class DrawingCanvas {
   }
 
   redrawCurrentMask(layerId = this.selectedLayerId) {
+    if(this.isDrawing) return;
     const snapshot = this.frameMasksTracker[this.currentFrameNumber].mask;
     const selectedLayerMask = snapshot.find(mask => mask.layer_id === layerId);
     if( selectedLayerMask && selectedLayerMask.mask ) {
+      this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
       this.drawMaskScaled(selectedLayerMask.mask);
     }
   }
