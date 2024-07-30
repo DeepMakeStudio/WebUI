@@ -228,9 +228,8 @@ class RenderedLayer {
       ratio = ctx_out.canvas.clientHeight / height;
       offset_width = (ctx_out.canvas.clientWidth - (ratio * width)) / 2;
     }
-    ctx_out.drawImage((video ? ctx : ctx.canvas),
-      0, 0, width, height,
-      offset_width, offset_height, ratio * width, ratio * height);
+    ctx_out.drawImage((video ? ctx : ctx.canvas), 0, 0, width, height, offset_width, offset_height, ratio * width, ratio * height);
+    //player.drawingCanvas.updateScaleFactor(0, 0, width, height, offset_width, offset_height, ratio * width, ratio * height);
   }
 }
 
@@ -493,8 +492,8 @@ class ImageLayer extends MoveableLayer {
       let y = f[1] + this.canvas.height / 2 - this.height / 2;
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.ctx.drawImage(this.img, 0, 0, this.width, this.height, x, y, scale * this.width, scale * this.height);
-      player.drawingCanvas.updateScaleFactor(0, 0, this.width, this.height, x, y, scale * this.width, scale * this.height);
       this.drawScaled(this.ctx, ctx_out);
+      player.drawingCanvas.updateScaleFactor(0, 0, this.width, this.height, x, y, scale * this.width, scale * this.height);
     }
   }
 }
@@ -918,7 +917,7 @@ class DrawingCanvas {
         const snapshot = this.frameMasksTracker[frameNumber].mask;
         const selectedLayerMask = snapshot.find(mask => mask.layer_id === this.selectedLayerId);
         if(selectedLayerMask && selectedLayerMask.mask !== null) {
-          this.ctx.putImageData(selectedLayerMask.mask, 0, 0);
+          this.drawMaskScaled(selectedLayerMask.mask);
         }
         /*snapshot.forEach(mask => {
           this.ctx.putImageData(mask.mask, 0, 0);
@@ -929,6 +928,44 @@ class DrawingCanvas {
       this.currentFrameNumber = frameNumber;
     }
     this.showCorrespondingMasksLayers(frameNumber);
+  }
+
+  drawMaskScaled(mask, scale) {
+    //this.ctx.putImageData(mask, 0, 0);
+    createImageBitmap(mask).then((imgBitmap) => {
+      /*this.ctx.drawImage(imgBitmap,
+        this.scaleFactor.sx,
+        this.scaleFactor.sy,
+        this.scaleFactor.sWidth,
+        this.scaleFactor.sHeight,
+        this.scaleFactor.dx,
+        this.scaleFactor.dy,
+        this.scaleFactor.dWidth,
+        this.scaleFactor.dHeight
+      );*/
+      this.drawScaled(imgBitmap, this.ctx, false);
+    });
+  }
+
+  drawScaled(ctx, ctx_out, video = false) {
+    const width = video ? ctx.videoWidth : ctx.width;
+    const height = video ? ctx.videoHeight : ctx.height;
+    const in_ratio = width / height;
+    const out_ratio = this.drawingCanvas.clientWidth / this.drawingCanvas.clientHeight;
+    let ratio = 1;
+    let offset_width = 0;
+    let offset_height = 0;
+    if (in_ratio > out_ratio) { // video is wider
+      // match width
+      ratio = this.drawingCanvas.clientWidth / width;
+      offset_height = (this.drawingCanvas.clientHeight - (ratio * height)) / 2;
+    } else { // out is wider
+      // match height
+      ratio = this.drawingCanvas.clientHeight / height;
+      offset_width = (this.drawingCanvas.clientWidth - (ratio * width)) / 2;
+    }
+    ctx_out.drawImage((video ? ctx : ctx), 0, 0, width, height, offset_width, offset_height, ratio * width, ratio * height);
+    //player.drawingCanvas.updateScaleFactor(0, 0, width, height, offset_width, offset_height, ratio * width, ratio * height);
   }
 
   initEvents() {
@@ -1024,7 +1061,7 @@ class DrawingCanvas {
         this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
         if(currentMask) {
           currentMask.forEach(mask => {
-            this.ctx.putImageData(mask.mask, 0, 0);
+            this.drawMaskScaled(mask.mask)
           });
         }
         this.ctx.lineWidth = 2;
@@ -1035,7 +1072,7 @@ class DrawingCanvas {
         this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
         if(currentMask) {
           currentMask.forEach(mask => {
-            this.ctx.putImageData(mask.mask, 0, 0);
+            this.drawMaskScaled(mask.mask)
           });
         }
         this.ctx.beginPath();
@@ -1114,7 +1151,7 @@ class DrawingCanvas {
                 data[i + 3] = 178;
             }
           }
-          this.ctx.putImageData(imageData, 0, 0);
+          this.drawMaskScaled(imageData);
           tc.add('active');
         } else {
           tc.remove('active');
@@ -1140,7 +1177,7 @@ class DrawingCanvas {
                 data[i + 3] = 255;
             }
           }
-          this.ctx.putImageData(imageData, 0, 0);
+          this.drawMaskScaled(imageData);
           tc.add('active');
         } else {
           tc.remove('active');
@@ -1173,7 +1210,7 @@ class DrawingCanvas {
     const snapshot = this.frameMasksTracker[this.currentFrameNumber].mask;
     const selectedLayerMask = snapshot.find(mask => mask.layer_id === layerId);
     if( selectedLayerMask && selectedLayerMask.mask ) {
-      this.ctx.putImageData(selectedLayerMask.mask, 0, 0);
+      this.drawMaskScaled(selectedLayerMask.mask);
     }
   }
 
@@ -1252,8 +1289,7 @@ class DrawingCanvas {
         canvas.height = this.drawingCanvas.height;
 
         // Draw the image on the canvas
-        console.log(this.drawArea, this.scaleFactor)
-        ctx.drawImage(img, this.scaleFactor.sx, this.scaleFactor.sy, this.scaleFactor.sWidth, this.scaleFactor.sHeight, this.scaleFactor.dx, this.scaleFactor.dy, this.scaleFactor.dWidth, this.scaleFactor.dHeight);
+        ctx.drawImage(img, 0, 0);
 
         // Get the ImageData object from the canvas
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
