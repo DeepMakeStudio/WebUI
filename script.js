@@ -494,7 +494,7 @@ class ImageLayer extends MoveableLayer {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.ctx.drawImage(this.img, 0, 0, this.width, this.height, x, y, scale * this.width, scale * this.height);
       this.drawScaled(this.ctx, ctx_out);
-      player.drawingCanvas.updateScaleFactor(0, 0, this.width, this.height, x, y, scale * this.width, scale * this.height);
+      //player.drawingCanvas.updateScaleFactor(0, 0, this.width, this.height, x, y, scale * this.width, scale * this.height);
     }
   }
 }
@@ -966,15 +966,15 @@ class DrawingCanvas {
       offset_width = (this.drawingCanvas.clientWidth - (ratio * width)) / 2;
     }
     ctx_out.drawImage(
-      (video ? ctx : ctx),
-      0, 
-      0,
-      width,
-      height,
-      offset_width,
-      offset_height,
-      ratio * width,
-      ratio * height
+      (video ? ctx : ctx), // image
+      0, // The x-axis coordinate of the top left corner of the sub-rectangle of the source image to draw into the destination context. Use the 3- or 5-argument syntax to omit this argument.
+      0, // The y-axis coordinate of the top left corner of the sub-rectangle of the source image to draw into the destination context. Use the 3- or 5-argument syntax to omit this argument.
+      width, // The width of the sub-rectangle of the source image to draw into the destination context. If not specified, the entire rectangle from the coordinates specified by sx and sy to the bottom-right corner of the image is used. Use the 3- or 5-argument syntax to omit this argument. A negative value will flip the image.
+      height, // The height of the sub-rectangle of the source image to draw into the destination context. Use the 3- or 5-argument syntax to omit this argument. A negative value will flip the image.
+      offset_width, // The x-axis coordinate in the destination canvas at which to place the top-left corner of the source image.
+      offset_height, // The y-axis coordinate in the destination canvas at which to place the top-left corner of the source image.
+      ratio * width, // The width to draw the image in the destination canvas. This allows scaling of the drawn image. If not specified, the image is not scaled in width when drawn. Note that this argument is not included in the 3-argument syntax.
+      ratio * height // The height to draw the image in the destination canvas. This allows scaling of the drawn image. If not specified, the image is not scaled in height when drawn. Note that this argument is not included in the 3-argument syntax.
     );
     //player.drawingCanvas.updateScaleFactor(0, 0, width, height, offset_width, offset_height, ratio * width, ratio * height);
   }
@@ -2186,9 +2186,9 @@ window.addEventListener('load', function() {
 
 });
 
-window.onbeforeunload = function() {
+/*window.onbeforeunload = function() {
   return true;
-}
+}*/
 
 window.addEventListener('resize', function() {
   player.resize();
