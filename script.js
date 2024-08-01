@@ -474,7 +474,6 @@ class ImageLayer extends MoveableLayer {
         this.height = this.img.naturalHeight;
         this.ready = true;
         player.updateDrawArea(this.width, this.height);
-        player.drawingCanvas.setMediaType('image');
         player.drawingCanvas.frameMasksTracker.push({frameNumber: 0, points: [], mask: []});
         player.drawingCanvas.currentFrameNumber = 0;
       }).bind(this));
@@ -493,8 +492,8 @@ class ImageLayer extends MoveableLayer {
       let y = f[1] + this.canvas.height / 2 - this.height / 2;
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.ctx.drawImage(this.img, 0, 0, this.width, this.height, x, y, scale * this.width, scale * this.height);
+      player.drawingCanvas.updateScaleFactor(0, 0, this.width, this.height, x, y, scale * this.width, scale * this.height);
       this.drawScaled(this.ctx, ctx_out);
-      //player.drawingCanvas.updateScaleFactor(0, 0, this.width, this.height, x, y, scale * this.width, scale * this.height);
     }
   }
 }
@@ -626,7 +625,6 @@ class VideoLayer extends RenderedLayer {
         }
         this.canvas.height = this.height;
         this.canvas.width = this.width;
-        player.drawingCanvas.setMediaType('video');
         this.convertToArrayBuffer();
       }).bind(this));
       this.video.src = this.reader.result;
@@ -774,7 +772,7 @@ class DrawingCanvas {
     this.maskLayers = document.querySelector('#mask-layers');
     this.newMaskBtn = document.querySelector('#new-mask');
     this.ctx = this.drawingCanvas.getContext('2d');
-    this.mediaType = 'video';
+    this.mediaType = null;
     this.frameMasksTracker = [];
     //this.selectedMaskLayer = null;
     this.currentFrameNumber = -1;
@@ -892,7 +890,9 @@ class DrawingCanvas {
     const body = new FormData();
     body.append('file', file);
 
-    fetch('http://nikkelitous.com:17495/image/upload', {
+    let url = this.mediaType === 'image' ? 'http://nikkelitous.com:17495/image/upload' : 'http://nikkelitous.com:17495/video/upload';
+
+    fetch(url, {
       method: 'POST',
       body: body,
       headers: {
@@ -934,6 +934,7 @@ class DrawingCanvas {
   drawMaskScaled(mask, scale) {
     //this.ctx.putImageData(mask, 0, 0);
     createImageBitmap(mask).then((imgBitmap) => {
+      // drawscaled uses the already-drawn image on the canvas. Scale works properly but canvas position does not.
       /*this.ctx.drawImage(imgBitmap,
         this.scaleFactor.sx,
         this.scaleFactor.sy,
@@ -965,7 +966,7 @@ class DrawingCanvas {
       ratio = this.drawingCanvas.clientHeight / height;
       offset_width = (this.drawingCanvas.clientWidth - (ratio * width)) / 2;
     }
-    ctx_out.drawImage(
+    this.ctx.drawImage(
       (video ? ctx : ctx), // image
       0, // The x-axis coordinate of the top left corner of the sub-rectangle of the source image to draw into the destination context. Use the 3- or 5-argument syntax to omit this argument.
       0, // The y-axis coordinate of the top left corner of the sub-rectangle of the source image to draw into the destination context. Use the 3- or 5-argument syntax to omit this argument.
@@ -991,6 +992,8 @@ class DrawingCanvas {
     document.querySelector('#filepicker').addEventListener('input', (e) => {
       if(!uploadSupportedType(e.target.files)){return}
       for (let file of e.target.files) {
+        if( !file.type.includes('video') && !file.type.includes('image') ) return;
+        player.drawingCanvas.setMediaType(file.type.includes('video') ? 'video' : 'image');
         this.uploadMedia(file);
       }
     });
@@ -1291,8 +1294,8 @@ class DrawingCanvas {
   }
 
   redrawCurrentMask(layerId = this.selectedLayerId) {
-    if(this.isDrawing) return;
-    const snapshot = this.frameMasksTracker[this.currentFrameNumber].mask;
+    const snapshot = this.frameMasksTracker[this.currentFrameNumber]?.mask;
+    if(this.isDrawing || !snapshot) return;
     const selectedLayerMask = snapshot.find(mask => mask.layer_id === layerId);
     if( selectedLayerMask && selectedLayerMask.mask ) {
       this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
