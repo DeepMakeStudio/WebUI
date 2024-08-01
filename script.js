@@ -1129,7 +1129,38 @@ class DrawingCanvas {
   addPoint(x, y, frameNumber) {
     const frame = this.frameMasksTracker[frameNumber];
     frame.points.push([x, y]);
-    console.log(frame)
+    this.sendPoints();
+  }
+
+  sendPoints() {
+    console.log('send points');
+    const body = {
+      "tracking_points": {}
+    }
+    this.frameMasksTracker.forEach(frame => {
+      if(frame.points.length) {
+        body.tracking_points[`frame_${frame.frameNumber}`] = frame.points.map(point => point);
+      }
+    });
+    console.log(body)
+    /*fetch('', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+      headers: {
+      'Content-Type': 'application/json',
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok ' + response.statusText);
+      }
+      return response.json();
+    })
+    .then(response => {
+      player.drawingCanvas.updateJobId(response.job_id);
+    }).catch(error => {
+      console.log(error);
+    })*/
   }
 
   removePoint(x, y, frameNumber) {
@@ -1144,6 +1175,7 @@ class DrawingCanvas {
           const index = frame.points.indexOf(point);
           frame.points.splice(index, 1);
           this.ctx.clearRect(point[0] - 5, point[1] - 5, 11, 11);
+          this.sendPoints();
           return;
         }
       }
