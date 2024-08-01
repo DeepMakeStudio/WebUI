@@ -475,7 +475,7 @@ class ImageLayer extends MoveableLayer {
         this.ready = true;
         player.updateDrawArea(this.width, this.height);
         player.drawingCanvas.setMediaType('image');
-        player.drawingCanvas.frameMasksTracker.push({frameNumber: 0, mask: []});
+        player.drawingCanvas.frameMasksTracker.push({frameNumber: 0, points: [], mask: []});
         player.drawingCanvas.currentFrameNumber = 0;
       }).bind(this));
     }).bind(this), false);
@@ -659,7 +659,7 @@ class VideoLayer extends RenderedLayer {
     let name = this.name;
     for (let i = 0; i < d * fps; ++i) {
       let frame = await this.seek(i / fps);
-      player.drawingCanvas.frameMasksTracker.push({frameNumber: i, mask: []});
+      player.drawingCanvas.frameMasksTracker.push({frameNumber: i, points: [], mask: []});
       let sum = 0;
       for (let j = 0; j < frame.data.length; ++j) {
         sum += frame.data[j];
@@ -983,6 +983,7 @@ class DrawingCanvas {
     this.drawingCanvas.addEventListener('mousedown', (event) => this.startDrawing(event));
     this.drawingCanvas.addEventListener('mousemove', (event) => this.draw(event));
     this.drawingCanvas.addEventListener('mouseup', (event) => this.stopDrawing(event));
+    //this.drawingCanvas.addEventListener('click', (event) => this.handleCanvasClick(event));
     this.newMaskBtn.addEventListener('click', () => {
       this.ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
       this.newMask(this.ctx.getImageData(0, 0, this.drawingCanvas.width, this.drawingCanvas.height));
@@ -993,6 +994,14 @@ class DrawingCanvas {
         this.uploadMedia(file);
       }
     });
+  }
+
+  handleCanvasClick(event) {
+    if( this.activeTool === 'point' ) {
+      if( event.shiftKey ) {
+        this.removePoint(event.clientX, event.clientY, this.currentFrameNumber);
+      }
+    }
   }
 
   getCurrentFrameFromTracker() {
@@ -1043,12 +1052,12 @@ class DrawingCanvas {
       this.ctx.beginPath();
       this.ctx.moveTo(this.startX, this.startY);
     } else if(this.activeTool === 'point') {
-      const radius = 5;
-      this.ctx.beginPath();
-      this.ctx.arc(this.startX, this.startY, radius, 0, Math.PI * 2, false);
-      this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-      this.ctx.fill();
-      this.ctx.closePath();
+      if( !event.shiftKey ) {
+        this.addPoint(this.startX, this.startY, this.currentFrameNumber);
+        this.drawPoint(this.startX, this.startY);
+      } else {
+        this.removePoint(this.startX, this.startY, this.currentFrameNumber);
+      }
     } else if(this.activeTool === 'paint') {
       this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
       this.ctx.fillFlood(this.startX, this.startY, 0);
@@ -1093,6 +1102,15 @@ class DrawingCanvas {
     }
   }
 
+  drawPoint(x, y) {
+    const radius = 5;
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, radius, 0, Math.PI * 2, false);
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    this.ctx.fill();
+    this.ctx.closePath();
+  }
+
   stopDrawing() {
     if(this.isDrawing && this.activeTool !== null) {
       this.ctx.closePath();
@@ -1106,6 +1124,30 @@ class DrawingCanvas {
       }
     }
     this.isDrawing = false;
+  }
+
+  addPoint(x, y, frameNumber) {
+    const frame = this.frameMasksTracker[frameNumber];
+    frame.points.push([x, y]);
+    console.log(frame)
+  }
+
+  removePoint(x, y, frameNumber) {
+    const frame = this.frameMasksTracker[frameNumber];
+    if( frame && frame.points.length ) {
+      for (let point of frame.points) {
+        const distance = Math.sqrt(
+          (x - point[0]) * (x - point[0]) + 
+          (y - point[1]) * (y - point[1])
+        );
+        if (distance <= 5) {
+          const index = frame.points.indexOf(point);
+          frame.points.splice(index, 1);
+          this.ctx.clearRect(point[0] - 5, point[1] - 5, 11, 11);
+          return;
+        }
+      }
+    }
   }
 
   updateMaskLayer(frameNumber, layerId) {
