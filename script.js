@@ -782,6 +782,7 @@ class DrawingCanvas {
     };
     this.selectedLayerId = null;
     this.uploadedImageId = null;
+    this.uploadedVideoId = null;
     this.activeTool = null;
     this.isDrawing = false;
     this.isErasing = false;
@@ -824,12 +825,12 @@ class DrawingCanvas {
     }
   }
 
-  updateJobId(id) {
+  updateJobId(id, callback) {
     this.job.id = id;
-    this.getJob(id);
+    this.getJob(id, callback);
   }
 
-  getJob(jobId) {
+  getJob(jobId, callback) {
     fetch(`http://nikkelitous.com:17495/job/${jobId}`, {
       method: 'GET',
       headers: {
@@ -844,17 +845,17 @@ class DrawingCanvas {
     })
     .then(response => {
       this.job.status = response.status;
-      if( response.status !== 'Success' ) {
+      if( response.hasOwnProperty('status') && response.status !== 'Success' ) {
         if( response.status !== 'Job failed' ) {
           window.setTimeout(() => {
-            this.getJob(jobId);
+            this.getJob(jobId, callback);
           }, 1000);
           //this.getMaskImage(this.currentFrameNumber, '1b86257f-dfc3-47ae-be9d-e284ee52f0bc') //TEMP
         } else {
           alert('Job Failed');
         }
       } else {
-        this.getMaskImage(this.currentFrameNumber, response.output_mask);
+        callback();
       }
     }).catch(error => {
       console.log(error);
@@ -906,7 +907,11 @@ class DrawingCanvas {
       return response.json();
     })
     .then(response => {
-      this.uploadedImageId = response.image_id;
+      if( response.hasOwnProperty('image_id') ) {
+        this.uploadedImageId = response.image_id;
+      } else if( response.hasOwnProperty('video_id') ) {
+        this.uploadedVideoId = response.video_id;
+      }
     }).catch(error => {
       console.log(error);
     })
@@ -1136,21 +1141,24 @@ class DrawingCanvas {
   }
 
   sendPoints() {
-    console.log('send points');
     const body = {
-      "tracking_points": {}
+      video: this.uploadedVideoId,
+      include_points: [],
+      start_frame: this.currentFrameNumber,
+      end_frame: this.currentFrameNumber + 3,
     }
+
     this.frameMasksTracker.forEach(frame => {
       if(frame.points.length) {
-        body.tracking_points[`frame_${frame.frameNumber}`] = frame.points.map(point => point);
+        frame.points.map(point => body.include_points.push(point));
       }
     });
-    console.log(body)
-    /*fetch('', {
+    
+    fetch(`http://nikkelitous.com:17495/plugins/call_endpoint/Gsam/track_points`, {
       method: 'PUT',
       body: JSON.stringify(body),
       headers: {
-      'Content-Type': 'application/json',
+        'Content-Type': 'application/json',
       }
     })
     .then(response => {
@@ -1160,10 +1168,10 @@ class DrawingCanvas {
       return response.json();
     })
     .then(response => {
-      player.drawingCanvas.updateJobId(response.job_id);
+      this.updateJobId(response.job_id, () => console.table(response));
     }).catch(error => {
       console.log(error);
-    })*/
+    })
   }
 
   removePoint(x, y, frameNumber) {
@@ -1429,7 +1437,8 @@ class Plugins {
     });
 
     this.startRenderButton.addEventListener('click', () => {
-      if( this.plugin === 'Gsam' ) {
+      this.makePluginEndpointCall();
+      /*if( this.plugin === 'Gsam' ) {
         if( this.endpoint === 'get_mask' ) {
           const imageId = player.drawingCanvas.uploadedImageId;
           if( this.prompt ) {
@@ -1438,7 +1447,7 @@ class Plugins {
             alert('Please provide a prompt');
           }
         }
-      }
+      }*/
     });
   }
 
@@ -1459,11 +1468,16 @@ class Plugins {
     const body = {};
     if( this.plugin === 'Gsam' ) {
       if( this.endpoint === 'get_mask' ) {
-        body.img = player.drawingCanvas.uploadedImageId;
+        if( !this.prompt ) return;
+        if( player.drawingCanvas.mediaType === 'image' ) {
+          body.img = player.drawingCanvas.uploadedImageId;
+        } else if( player.drawingCanvas.mediaType === 'video' ) {
+          body.video = player.drawingCanvas.uploadedVideoId;
+        }
         body.prompt = this.prompt;
       }
     }
-    console.log(body)
+    console.log(body);
     fetch(url, {
       method: 'PUT',
       body: JSON.stringify(body),
@@ -1478,7 +1492,7 @@ class Plugins {
       return response.json();
     })
     .then(response => {
-      player.drawingCanvas.updateJobId(response.job_id);
+      player.drawingCanvas.updateJobId(response.job_id, () => this.getMaskImage(this.currentFrameNumber, response.output_mask));
     }).catch(error => {
       console.log(error);
     })
