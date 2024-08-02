@@ -855,7 +855,7 @@ class DrawingCanvas {
           alert('Job Failed');
         }
       } else {
-        callback();
+        callback(response);
       }
     }).catch(error => {
       console.log(error);
@@ -1168,10 +1168,23 @@ class DrawingCanvas {
       return response.json();
     })
     .then(response => {
-      this.updateJobId(response.job_id, () => console.table(response));
+      this.updateJobId(response.job_id, this.handleTrackedPointsResponse);
     }).catch(error => {
       console.log(error);
     })
+  }
+
+  handleTrackedPointsResponse = (points) => {
+    const included = points.tracked_dict.tracked_include_points;
+    const excluded = points.tracked_dict.tracked_exclude_points;
+    
+    Object.keys(included).forEach((frame) => {
+      const frameNumber = frame.replace(/^\D+/g, '');
+      const frameTrackerPoints = this.frameMasksTracker[frameNumber].points;
+      const newPoints = included[frame];
+      this.frameMasksTracker[frameNumber].points = [...new Set([...frameTrackerPoints, ...newPoints])];
+    });
+    console.log(this.frameMasksTracker);
   }
 
   removePoint(x, y, frameNumber) {
