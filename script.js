@@ -858,7 +858,7 @@ class DrawingCanvas {
         callback(response);
       }
     }).catch(error => {
-      console.log(error);
+      console.error(error);
     })
   }
 
@@ -1137,7 +1137,52 @@ class DrawingCanvas {
   addPoint(x, y, frameNumber) {
     const frame = this.frameMasksTracker[frameNumber];
     frame.points.push([x, y]);
-    this.sendPoints();
+    this.getMask('fd6ac95a-3470-4eed-9acd-d5e60ef5ab10');
+    //this.sendPoints();
+  }
+
+  getMask(id) {
+    const body = {
+      img: id,
+      prompt: "Text, optional=true)",
+      //box_threshold: "Float(default=0.35, min=0.0, max=1.0, optional=true)",
+      //text_threshold: "Float(default=0.25, min=0.0, max=1.0, optional=true)",
+      include_points: [],
+      /*exclude_points: "List[Point](optional=true)",
+      refine: "Bool(default=False, optional=true)",
+      remove_blobs: "Bool(default=False, optional=true)"*/
+    }
+
+    this.frameMasksTracker.forEach(frame => {
+      if(frame.points.length) {
+        frame.points.map(point => body.include_points.push(point));
+      }
+    });
+    
+    fetch(`http://nikkelitous.com:17495/plugins/call_endpoint/Gsam/get_mask`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok ' + response.statusText);
+      }
+      return response.json();
+    })
+    .then(response => {
+      this.updateJobId(response.job_id, this.handleGetMaskResponse);
+    }).catch(error => {
+      console.log(error);
+    })
+  }
+
+  handleGetMaskResponse = (response) => {
+    if( response.hasOwnProperty('output_mask') ) {
+      this.getMaskImage(this.currentFrameNumber, response.output_mask);
+    }
   }
 
   sendPoints() {
