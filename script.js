@@ -1060,10 +1060,12 @@ class DrawingCanvas {
       this.ctx.beginPath();
       this.ctx.moveTo(this.startX, this.startY);
     } else if(this.activeTool === 'point') {
-      if( !event.shiftKey ) {
+      if( !event.shiftKey && !event.altKey) {
         this.addPoint(this.startX, this.startY, this.currentFrameNumber);
         this.drawPoint(this.startX, this.startY);
-      } else {
+      } else if( event.altKey ) {
+        this.addPoint(this.startX, this.startY, this.currentFrameNumber);
+      } else if( event.shiftKey ) {
         this.removePoint(this.startX, this.startY, this.currentFrameNumber);
       }
     } else if(this.activeTool === 'paint') {
@@ -1137,8 +1139,7 @@ class DrawingCanvas {
   addPoint(x, y, frameNumber) {
     const frame = this.frameMasksTracker[frameNumber];
     frame.points.push([x, y]);
-    this.getMask('fd6ac95a-3470-4eed-9acd-d5e60ef5ab10');
-    //this.sendPoints();
+    this.getMask(`${this.uploadedVideoId}_${frameNumber}`);
   }
 
   getMask(id) {
